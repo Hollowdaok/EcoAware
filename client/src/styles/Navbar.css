@@ -1,0 +1,8 @@
+.nav-link-custom {
+    color: white !important;
+    transition: color 0.3s ease;
+  }
+  
+  .nav-link-custom:hover {
+    color: #aaaaaa !important;
+  }
