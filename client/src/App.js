@@ -1,22 +1,23 @@
 import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import NavBar from './components/Navbar';
-import HeroSection from './components/HeroSection';
-import FeaturesSection from './components/FeaturesSection';
-import KnowledgeCards from './components/KnowledgeCards';
-import GamesSection from './components/GamesSection';
-import TestsSection from './components/TestsSection';
+import Home from './pages/Home';
+import EcoKnowledge from './pages/EcoKnowledge';
+import Tests from './pages/Tests';
+import EcoGames from './pages/EcoGames';
 import Footer from './components/Footer';
 
 const App = () => (
-  <>
+  <Router>
     <NavBar />
-    <HeroSection />
-    <FeaturesSection />
-    <KnowledgeCards />
-    <GamesSection />
-    <TestsSection />
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/knowledge" element={<EcoKnowledge />} />
+      <Route path="/tests" element={<Tests />} />
+      <Route path="/games" element={<EcoGames />} />
+    </Routes>
     <Footer />
-  </>
+  </Router>
 );
 
 export default App;

@@ -2,6 +2,7 @@ import React from 'react';
 import { Navbar, Nav, Container, Button } from 'react-bootstrap';
 import logo from '../assets/images/Icon.png';
 import '../styles/Navbar.css';
+import { Link } from 'react-router-dom';
 
 const NavBar = () => (
   <Navbar expand="lg" sticky="top" className="custom-navbar bg-success">
@@ -18,10 +19,10 @@ const NavBar = () => (
       <Navbar.Toggle aria-controls="navbar-nav" />
       <Navbar.Collapse id="navbar-nav">
         <Nav className="me-auto">
-          <Nav.Link href="#" className="nav-link-custom">Головна</Nav.Link>
-          <Nav.Link href="#" className="nav-link-custom">Екознання</Nav.Link>
-          <Nav.Link href="#" className="nav-link-custom">Тести</Nav.Link>
-          <Nav.Link href="#" className="nav-link-custom">Еко-ігри</Nav.Link>
+        <Nav.Link as={Link} to="/" className="nav-link-custom">Головна</Nav.Link>
+        <Nav.Link as={Link} to="/knowledge" className="nav-link-custom">Екознання</Nav.Link>
+        <Nav.Link as={Link} to="/tests" className="nav-link-custom">Тести</Nav.Link>
+        <Nav.Link as={Link} to="/games" className="nav-link-custom">Еко-ігри</Nav.Link>
           <Nav.Link href="#" className="nav-link-custom">Про проект</Nav.Link>
         </Nav>
         <Nav>
