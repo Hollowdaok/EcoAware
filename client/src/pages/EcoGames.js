@@ -1,28 +1,26 @@
 import React from 'react';
 import { Container, Row, Col, Card, Badge, Button } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 import '../styles/EcoGames.css';
 
 const EcoGamesPage = () => {
   const games = [
     {
+      id: 'trash-sorting',
       title: 'Сортуй сміття',
       difficulty: 'Легка',
       description: 'Навчіться правильно сортувати відходи в інтерактивній грі з різними рівнями складності. Дізнайтеся, які матеріали підлягають переробці, а які ні.',
       image: '/placeholder-game.jpg'
     },
     {
-      title: 'Сортуй сміття',
-      difficulty: 'Легка',
-      description: 'Навчіться правильно сортувати відходи в інтерактивній грі з різними рівнями складності. Дізнайтеся, які матеріали підлягають переробці, а які ні.',
-      image: '/placeholder-game.jpg'
-    },
-    {
+      id: 'eco-transport',
       title: 'Екологічний транспорт',
       difficulty: 'Середня',
       description: 'Дізнайтеся про вплив різних видів транспорту на довкілля та знайдіть найбільш екологічні варіанти пересування містом.',
       image: '/placeholder-game.jpg'
     },
     {
+      id: 'water-saving',
       title: 'Економія води',
       difficulty: 'Легка',
       description: 'Вивчіть прості способи економії води в повсякденному житті через інтерактивні завдання та головоломки.',
@@ -58,7 +56,12 @@ const EcoGamesPage = () => {
                       <span>{game.difficulty}</span>
                     </div>
                     <Card.Text>{game.description}</Card.Text>
-                    <Button variant="success" className="play-button">
+                    <Button
+                      variant="success"
+                      className="play-button"
+                      as={Link}
+                      to={`/games/${game.id}`} // Оновлено для використання id гри
+                    >
                       Грати
                     </Button>
                   </Card.Body>
@@ -68,8 +71,6 @@ const EcoGamesPage = () => {
           </Row>
         </Container>
       </div>
-
-      {/* Navigation Bar would be in the App component or a separate Navbar component */}
     </>
   );
 };
