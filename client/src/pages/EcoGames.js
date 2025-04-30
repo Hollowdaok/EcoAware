@@ -33,7 +33,7 @@ const EcoGamesPage = () => {
       {/* Hero Banner */}
       <div className="bg-secondary hero-section">
         <Container className="py-5 text-center text-light">
-          <h1 className="display-4 mb-3">Еко-ігри</h1>
+          <h1 className="display-4 mb-3">Еко-гра</h1>
           <p className="lead mx-auto">
             Інтерактивні екологічні ігри для розвитку екосвідомості та 
             екологічної грамотності в ігровій формі

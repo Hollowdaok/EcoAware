@@ -62,24 +62,6 @@ const TrashSortingGamePage = () => {
                     </Card.Body>
                   </Card>
                   
-                  <Card>
-                    <Card.Header as="h5">Корисні ресурси</Card.Header>
-                    <Card.Body>
-                      <ul className="resource-links">
-                        <li><Link to="/knowledge/article/1">Правила сортування сміття</Link></li>
-                        <li><Link to="/knowledge/article/2">Переробка пластику: що потрібно знати</Link></li>
-                        <li><Link to="/tests/3">Тест із сортування відходів</Link></li>
-                      </ul>
-                      <Button 
-                        variant="outline-success" 
-                        className="mt-3 w-100"
-                        as={Link}
-                        to="/knowledge"
-                      >
-                        Більше корисної інформації
-                      </Button>
-                    </Card.Body>
-                  </Card>
                 </div>
               </Col>
             </Row>

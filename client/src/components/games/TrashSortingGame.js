@@ -1,7 +1,7 @@
 // src/components/games/TrashSortingGame.js
 import React, { useState, useEffect, useRef } from 'react';
-import { Container, Row, Col, Button, Modal, ProgressBar } from 'react-bootstrap';
-import { Link, useNavigate } from 'react-router-dom';
+import { Container, Button, Modal, ProgressBar } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './TrashSortingGame.css';
 

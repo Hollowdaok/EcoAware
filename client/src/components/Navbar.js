@@ -23,8 +23,7 @@ const NavBar = () => {
     <Navbar 
       bg="success" 
       variant="dark" 
-      expand="lg" 
-      className="mb-4" 
+      expand="lg"
       expanded={expanded}
       onToggle={(expanded) => setExpanded(expanded)}
     >
@@ -34,9 +33,9 @@ const NavBar = () => {
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="me-auto">
             <Nav.Link as={Link} to="/" onClick={() => setExpanded(false)}>Головна</Nav.Link>
-            <Nav.Link as={Link} to="/knowledge" onClick={() => setExpanded(false)}>ЕкоЗнання</Nav.Link>
+            <Nav.Link as={Link} to="/knowledge" onClick={() => setExpanded(false)}>Екознання</Nav.Link>
             <Nav.Link as={Link} to="/tests" onClick={() => setExpanded(false)}>Тести</Nav.Link>
-            <Nav.Link as={Link} to="/games" onClick={() => setExpanded(false)}>Ігри</Nav.Link>
+            <Nav.Link as={Link} to="/games/trash-sorting" onClick={() => setExpanded(false)}>Гра</Nav.Link>
           </Nav>
           
           <Nav>
