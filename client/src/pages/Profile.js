@@ -43,7 +43,8 @@ const Profile = () => {
             method: 'GET',
             credentials: 'include',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
             }
           });
           
@@ -67,7 +68,8 @@ const Profile = () => {
               method: 'GET',
               credentials: 'include',
               headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
               }
             });
             
@@ -91,7 +93,8 @@ const Profile = () => {
             method: 'GET',
             credentials: 'include',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
             }
           });
           
@@ -115,7 +118,8 @@ const Profile = () => {
               method: 'GET',
               credentials: 'include',
               headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
               }
             });
             
@@ -132,31 +136,57 @@ const Profile = () => {
           errorMessages.push(`Помилка отримання тестів: ${testsError.message}`);
         }
         
-        // 3. Звичайний запит на отримання результатів ігор (не критично)
+        // 3. Отримання результатів ігор
+        // Оновлений код запиту статистики ігор без проблемного заголовка
         try {
           console.log('Fetching game results...');
+          
+          // Використовуємо стандартні заголовки без X-User-ID
           const gameResultsResponse = await fetch(`${API_URL}/games/trash-sorting/stats`, {
             method: 'GET',
-            credentials: 'include',
+            credentials: 'include', // Важливо для передачі cookie
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
             }
           });
           
+          // Решта коду...
           if (gameResultsResponse.ok) {
             const gameResultsData = await gameResultsResponse.json();
             console.log('Game results received:', gameResultsData);
             
             if (gameResultsData.success) {
               userStats.gameResults = gameResultsData.stats || [];
+            } else {
+              console.error('Error in game results data:', gameResultsData.message);
+              // Створюємо порожню статистику
+              userStats.gameResults = {
+                totalGames: 0,
+                totalScore: 0,
+                correctIncorrect: { correct: 0, incorrect: 0, total: 0, accuracy: 0 },
+                levelStats: []
+              };
             }
           } else {
-            // Для ігор не показуємо помилку користувачу
             console.log('Game results not available:', gameResultsResponse.status);
+            // Створюємо порожню статистику
+            userStats.gameResults = {
+              totalGames: 0,
+              totalScore: 0,
+              correctIncorrect: { correct: 0, incorrect: 0, total: 0, accuracy: 0 },
+              levelStats: []
+            };
           }
         } catch (gameError) {
           console.error('Exception fetching game results:', gameError);
-          // Для ігор не показуємо помилку користувачу
+          // Створюємо порожню статистику
+          userStats.gameResults = {
+            totalGames: 0,
+            totalScore: 0,
+            correctIncorrect: { correct: 0, incorrect: 0, total: 0, accuracy: 0 },
+            levelStats: []
+          };
         }
         
         console.log('Final user stats:', userStats);

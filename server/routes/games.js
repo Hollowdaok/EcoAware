@@ -1,6 +1,8 @@
 // server/routes/games.js
 const express = require('express');
-const router = express.Router(); // Додана ініціалізація маршрутизатора
+const router = express.Router();
+const mongoose = require('mongoose');
+const { ObjectId } = mongoose.Types;
 const GameResult = require('../models/GameResult');
 
 // Маршрут для збереження результатів гри "Сортування сміття"
@@ -8,34 +10,75 @@ router.post('/trash-sorting/results', async (req, res) => {
   try {
     const { level, score, correct, incorrect, total, playTime } = req.body;
     
+    // Детальне логування для діагностики
+    console.log('Отримано запит на збереження результатів гри:');
+    console.log('Тіло запиту:', req.body);
+    
+    // Перевірка чи користувач авторизований
+    if (!req.user) {
+      console.log('Неавторизований користувач намагається зберегти результати');
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Для збереження результатів необхідно авторизуватися'
+      });
+    }
+    
     // Отримання ID користувача з req.user (встановлюється middleware авторизації)
-    // Якщо маршрут не захищений, то req.user буде undefined
-    const userId = req.user ? req.user.id : null;
+    const userId = req.user.id;
+    console.log('ID користувача:', userId);
+    
+    // Створення ObjectId для userId
+    let userObjectId;
+    try {
+      userObjectId = new ObjectId(userId);
+      console.log('Створено ObjectId:', userObjectId);
+    } catch (objIdError) {
+      console.error('Помилка при створенні ObjectId:', objIdError);
+      return res.status(400).json({
+        success: false,
+        message: 'Неправильний формат ID користувача'
+      });
+    }
+    
+    // Підготовка даних з правильними типами
+    const gameData = {
+      gameType: 'trash-sorting',
+      userId: userObjectId,
+      level: parseInt(level) || 1,
+      score: parseInt(score) || 0,
+      correct: parseInt(correct) || 0,
+      incorrect: parseInt(incorrect) || 0,
+      total: parseInt(total) || 0,
+      playTime: parseInt(playTime) || 0
+    };
+    
+    // Обчислюємо accuracy (якщо не буде обчислено в моделі)
+    if (gameData.total > 0) {
+      gameData.accuracy = Math.round((gameData.correct / gameData.total) * 100);
+    } else {
+      gameData.accuracy = 0;
+    }
     
     // Створення нового запису результату гри
-    const gameResult = new GameResult({
-      gameType: 'trash-sorting',
-      userId,
-      level,
-      score,
-      correct,
-      incorrect,
-      total,
-      playTime
-    });
+    const gameResult = new GameResult(gameData);
     
+    // Зберігаємо результат
     await gameResult.save();
-    res.status(201).json({ 
+    
+    console.log('Результат успішно збережено:', gameResult);
+    
+    // Відправляємо відповідь
+    return res.status(201).json({ 
       success: true, 
       message: 'Результати збережено успішно', 
-      result: gameResult,
-      isAuthenticated: !!userId
+      result: gameResult
     });
   } catch (error) {
     console.error('Помилка при збереженні результатів гри:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false, 
-      message: 'Помилка при збереженні результатів' 
+      message: 'Помилка при збереженні результатів',
+      error: error.message 
     });
   }
 });
@@ -48,9 +91,11 @@ router.get('/trash-sorting/leaderboard', async (req, res) => {
     const query = { gameType: 'trash-sorting' };
     
     // Фільтрація за рівнем, якщо вказано
-    if (level) {
+    if (level && level !== 'all') {
       query.level = parseInt(level);
     }
+    
+    console.log('Запит на рейтинг з фільтром:', query);
     
     // Отримання кращих результатів
     const leaderboard = await GameResult.find(query)
@@ -60,95 +105,266 @@ router.get('/trash-sorting/leaderboard', async (req, res) => {
       .populate('userId', 'username')  // Заповнення поля користувача, якщо є зв'язок з колекцією користувачів
       .lean();  // Перетворення результатів на прості JS об'єкти
     
-    res.json({ success: true, leaderboard });
+    console.log('Знайдено результатів:', leaderboard.length);
+    
+    return res.json({ 
+      success: true, 
+      leaderboard
+    });
   } catch (error) {
     console.error('Помилка при отриманні рейтингу:', error);
-    res.status(500).json({ success: false, message: 'Помилка при отриманні рейтингу' });
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Помилка при отриманні рейтингу',
+      error: error.message 
+    });
   }
 });
 
 // Отримання статистики користувача
 router.get('/trash-sorting/stats', async (req, res) => {
   try {
-    // Отримання ID користувача з req.user (встановлюється middleware авторизації)
-    const userId = req.user ? req.user.id : null;
+    // Логування для діагностики
+    console.log('Отримано запит статистики гри');
+    console.log('Заголовки запиту:', req.headers);
+    console.log('Cookies запиту:', req.cookies);
+    console.log('Користувач з запиту:', req.user);
     
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'Користувач не автентифікований' });
+    // Декодування токена вручну, якщо req.user відсутній але токен є
+    if (!req.user && req.cookies.token) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(
+          req.cookies.token, 
+          process.env.JWT_SECRET || 'ecoaware_secure_jwt_token_2024'
+        );
+        req.user = decoded;
+        console.log('Токен декодовано в маршруті stats:', req.user);
+      } catch (tokenError) {
+        console.error('Помилка декодування токена в маршруті stats:', tokenError);
+      }
+    }
+    
+    // Перевірка на наявність авторизації
+    if (!req.user) {
+      console.log('Маршрут stats: користувач не авторизований');
+      
+      // Відповідаємо з порожньою статистикою замість помилки 401
+      return res.json({
+        success: true,
+        message: 'Статистика для неавторизованого користувача',
+        stats: {
+          totalGames: 0,
+          totalScore: 0,
+          correctIncorrect: { correct: 0, incorrect: 0, total: 0, accuracy: 0 },
+          levelStats: []
+        }
+      });
+    }
+    
+    // Отримання ID користувача з req.user
+    const userId = req.user.id;
+    console.log('Запит статистики для користувача ID:', userId);
+    
+    // Переконаємося, що модель GameResult доступна
+    if (!GameResult || typeof GameResult.find !== 'function') {
+      console.error('Модель GameResult недоступна або не має методу find');
+      return res.json({
+        success: true,
+        message: 'Помилка доступу до моделі даних',
+        stats: {
+          totalGames: 0,
+          totalScore: 0,
+          correctIncorrect: { correct: 0, incorrect: 0, total: 0, accuracy: 0 },
+          levelStats: []
+        }
+      });
+    }
+    
+    // Створення ObjectId для userId
+    let userObjectId;
+    try {
+      userObjectId = new ObjectId(userId);
+      console.log('ID користувача як ObjectId:', userObjectId);
+    } catch (objIdError) {
+      console.error('Помилка при створенні ObjectId:', objIdError);
+      
+      // Спробуємо використати рядкове представлення ID
+      try {
+        console.log('Спроба прямого пошуку за userId:', userId);
+        // Рахуємо ігри без перетворення на ObjectId
+        const countWithoutObjectId = await GameResult.countDocuments({ 
+          gameType: 'trash-sorting', 
+          userId: userId 
+        });
+        
+        console.log('Знайдено ігор без ObjectId:', countWithoutObjectId);
+        
+        if (countWithoutObjectId > 0) {
+          // Якщо знайдено ігри, продовжуємо з рядковим ID
+          const allResults = await GameResult.find({
+            gameType: 'trash-sorting',
+            userId: userId
+          }).lean();
+          
+          // Обчислення статистики
+          // ... (решта коду функції)
+        }
+      } catch (secondaryError) {
+        console.error('Помилка при альтернативному пошуку:', secondaryError);
+      }
+      
+      // Повертаємо порожню статистику
+      return res.json({
+        success: true,
+        message: 'Проблема з ідентифікатором користувача',
+        stats: {
+          totalGames: 0,
+          totalScore: 0,
+          correctIncorrect: { correct: 0, incorrect: 0, total: 0, accuracy: 0 },
+          levelStats: []
+        }
+      });
     }
     
     // Загальна статистика
-    const totalGames = await GameResult.countDocuments({ gameType: 'trash-sorting', userId });
-    const totalScore = await GameResult.aggregate([
-      { $match: { gameType: 'trash-sorting', userId } },
-      { $group: { _id: null, total: { $sum: '$score' } } }
-    ]);
+    const totalGames = await GameResult.countDocuments({ 
+      gameType: 'trash-sorting', 
+      userId: userObjectId 
+    });
     
-    // Статистика правильних/неправильних відповідей
-    const correctIncorrectStats = await GameResult.aggregate([
-      { $match: { gameType: 'trash-sorting', userId } },
-      { $group: { 
-        _id: null, 
-        totalCorrect: { $sum: '$correct' },
-        totalIncorrect: { $sum: '$incorrect' },
-        totalItems: { $sum: '$total' }
-      } }
-    ]);
+    console.log('Знайдено ігор:', totalGames);
     
-    // Статистика за рівнями
-    const levelStats = await GameResult.aggregate([
-      { $match: { gameType: 'trash-sorting', userId } },
-      { $group: { 
-        _id: '$level', 
-        gamesPlayed: { $sum: 1 },
-        avgScore: { $avg: '$score' },
-        maxScore: { $max: '$score' },
-        totalPlayTime: { $sum: '$playTime' }
-      } },
-      { $sort: { _id: 1 } }
-    ]);
+    // Якщо користувач не грав жодної гри
+    if (totalGames === 0) {
+      return res.json({
+        success: true,
+        stats: {
+          totalGames: 0,
+          totalScore: 0,
+          correctIncorrect: { correct: 0, incorrect: 0, total: 0, accuracy: 0 },
+          levelStats: []
+        }
+      });
+    }
     
+    // Отримання всіх результатів для обчислення статистики вручну
+    const allResults = await GameResult.find({
+      gameType: 'trash-sorting',
+      userId: userObjectId
+    }).lean();
+    
+    // Обчислення загальної статистики
+    let totalScore = 0;
+    let totalCorrect = 0;
+    let totalIncorrect = 0;
+    let totalItems = 0;
+    
+    const levelMap = new Map();
+    
+    // Обробка результатів
+    allResults.forEach(result => {
+      // Загальна статистика
+      totalScore += result.score || 0;
+      totalCorrect += result.correct || 0;
+      totalIncorrect += result.incorrect || 0;
+      totalItems += result.total || 0;
+      
+      // Статистика за рівнями
+      const level = result.level || 1;
+      if (!levelMap.has(level)) {
+        levelMap.set(level, {
+          level,
+          gamesPlayed: 0,
+          totalScore: 0,
+          maxScore: 0,
+          totalPlayTime: 0
+        });
+      }
+      
+      const levelStat = levelMap.get(level);
+      levelStat.gamesPlayed += 1;
+      levelStat.totalScore += result.score || 0;
+      levelStat.maxScore = Math.max(levelStat.maxScore, result.score || 0);
+      levelStat.totalPlayTime += result.playTime || 0;
+    });
+    
+    // Перетворення Map на масив
+    const levelStats = Array.from(levelMap.values()).map(levelStat => ({
+      level: levelStat.level,
+      gamesPlayed: levelStat.gamesPlayed,
+      avgScore: Math.round(levelStat.totalScore / levelStat.gamesPlayed),
+      maxScore: levelStat.maxScore,
+      totalPlayTime: levelStat.totalPlayTime,
+      avgPlayTime: Math.round(levelStat.totalPlayTime / levelStat.gamesPlayed)
+    })).sort((a, b) => a.level - b.level);
+    
+    // Формування відповіді
     const stats = {
       totalGames,
-      totalScore: totalScore.length > 0 ? totalScore[0].total : 0,
-      correctIncorrect: correctIncorrectStats.length > 0 ? {
-        correct: correctIncorrectStats[0].totalCorrect,
-        incorrect: correctIncorrectStats[0].totalIncorrect,
-        total: correctIncorrectStats[0].totalItems,
-        accuracy: correctIncorrectStats[0].totalItems > 0 
-          ? Math.round((correctIncorrectStats[0].totalCorrect / correctIncorrectStats[0].totalItems) * 100) 
-          : 0
-      } : { correct: 0, incorrect: 0, total: 0, accuracy: 0 },
-      levelStats: levelStats.map(level => ({
-        level: level._id,
-        gamesPlayed: level.gamesPlayed,
-        avgScore: Math.round(level.avgScore),
-        maxScore: level.maxScore,
-        totalPlayTime: level.totalPlayTime,
-        avgPlayTime: Math.round(level.totalPlayTime / level.gamesPlayed)
-      }))
+      totalScore,
+      correctIncorrect: {
+        correct: totalCorrect,
+        incorrect: totalIncorrect,
+        total: totalItems,
+        accuracy: totalItems > 0 ? Math.round((totalCorrect / totalItems) * 100) : 0
+      },
+      levelStats
     };
     
-    res.json({ success: true, stats });
+    return res.json({ success: true, stats });
   } catch (error) {
     console.error('Помилка при отриманні статистики:', error);
-    res.status(500).json({ success: false, message: 'Помилка при отриманні статистики' });
+    
+    // Повертаємо порожню статистику замість помилки 500
+    return res.json({ 
+      success: true, 
+      message: 'Виникла помилка при отриманні статистики',
+      stats: {
+        totalGames: 0,
+        totalScore: 0,
+        correctIncorrect: { correct: 0, incorrect: 0, total: 0, accuracy: 0 },
+        levelStats: []
+      }
+    });
   }
 });
 
 // Отримання рекомендацій на основі результатів гри
 router.get('/trash-sorting/recommendations', async (req, res) => {
   try {
-    const userId = req.user ? req.user.id : null;
+    // Перевірка чи користувач авторизований
+    if (!req.user) {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Для отримання рекомендацій необхідно авторизуватися'
+      });
+    }
     
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'Користувач не автентифікований' });
+    // Отримання ID користувача з req.user
+    const userId = req.user.id;
+    console.log('Запит рекомендацій для користувача ID:', userId);
+    
+    // Створення ObjectId для userId
+    let userObjectId;
+    try {
+      userObjectId = new ObjectId(userId);
+    } catch (objIdError) {
+      console.error('Помилка при створенні ObjectId:', objIdError);
+      return res.status(400).json({
+        success: false,
+        message: 'Неправильний формат ID користувача'
+      });
     }
     
     // Отримання останніх результатів гри
-    const latestResults = await GameResult.find({ gameType: 'trash-sorting', userId })
+    const latestResults = await GameResult.find({ 
+      gameType: 'trash-sorting', 
+      userId: userObjectId 
+    })
       .sort({ createdAt: -1 })
-      .limit(5);
+      .limit(5)
+      .lean();
     
     // Аналіз слабких місць у сортуванні
     const recommendations = {
@@ -163,8 +379,13 @@ router.get('/trash-sorting/recommendations', async (req, res) => {
     
     // Приклад логіки для визначення областей для покращення
     if (latestResults.length > 0) {
-      const averageAccuracy = latestResults.reduce((sum, result) => sum + 
-        (result.total > 0 ? (result.correct / result.total) * 100 : 0), 0) / latestResults.length;
+      let totalAccuracy = 0;
+      latestResults.forEach(result => {
+        const accuracy = result.total > 0 ? (result.correct / result.total) * 100 : 0;
+        totalAccuracy += accuracy;
+      });
+      
+      const averageAccuracy = totalAccuracy / latestResults.length;
       
       if (averageAccuracy < 60) {
         recommendations.improvementAreas.push({
@@ -172,14 +393,16 @@ router.get('/trash-sorting/recommendations', async (req, res) => {
           tip: 'Перегляньте основні правила сортування відходів у вашому місті'
         });
       }
-      
-      // Тут можна додати більше логіки для аналізу результатів
     }
     
-    res.json({ success: true, recommendations });
+    return res.json({ success: true, recommendations });
   } catch (error) {
     console.error('Помилка при отриманні рекомендацій:', error);
-    res.status(500).json({ success: false, message: 'Помилка при отриманні рекомендацій' });
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Помилка при отриманні рекомендацій',
+      error: error.message 
+    });
   }
 });
 

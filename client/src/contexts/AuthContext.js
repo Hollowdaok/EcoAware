@@ -14,30 +14,46 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authToken, setAuthToken] = useState(null);
   
   // Перевірка статусу авторизації при завантаженні
   useEffect(() => {
     checkAuthStatus();
   }, []);
   
-  // Функція для перевірки статусу авторизації
+  // Функція для перевірки статусу авторизації з додатковим логуванням
   const checkAuthStatus = async () => {
     try {
+      console.log('Перевірка статусу авторизації...');
+      
       const response = await fetch(`${API_URL}/auth/status`, {
         method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        },
         credentials: 'include'
       });
       
       const data = await response.json();
+      console.log('Відповідь статусу авторизації:', data);
       
       if (data.isAuthenticated) {
+        console.log('Користувач авторизований:', data.user);
         setCurrentUser(data.user);
+        
+        // Зберігаємо токен, якщо він є в відповіді
+        if (data.token) {
+          setAuthToken(data.token);
+        }
       } else {
+        console.log('Користувач не авторизований');
         setCurrentUser(null);
+        setAuthToken(null);
       }
     } catch (error) {
       console.error('Помилка перевірки авторизації:', error);
       setCurrentUser(null);
+      setAuthToken(null);
     } finally {
       setLoading(false);
     }
@@ -48,10 +64,13 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     
     try {
+      console.log('Реєстрація нового користувача:', formData.username);
+      
       const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         credentials: 'include',
         body: JSON.stringify(formData)
@@ -59,11 +78,18 @@ export const AuthProvider = ({ children }) => {
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || errorData.errors[0]?.msg || 'Помилка реєстрації');
+        throw new Error(errorData.message || errorData.errors?.[0]?.msg || 'Помилка реєстрації');
       }
       
       const data = await response.json();
+      console.log('Реєстрація успішна:', data);
+      
       setCurrentUser(data.user);
+      
+      // Зберігаємо токен, якщо він є в відповіді
+      if (data.token) {
+        setAuthToken(data.token);
+      }
       
       return data;
     } catch (error) {
@@ -79,10 +105,13 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     
     try {
+      console.log('Спроба входу для користувача:', username);
+      
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         credentials: 'include',
         body: JSON.stringify({ username, password })
@@ -94,7 +123,14 @@ export const AuthProvider = ({ children }) => {
       }
       
       const data = await response.json();
+      console.log('Авторизація успішна:', data);
+      
       setCurrentUser(data.user);
+      
+      // Зберігаємо токен, якщо він є в відповіді
+      if (data.token) {
+        setAuthToken(data.token);
+      }
       
       return data;
     } catch (error) {
@@ -110,6 +146,8 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     
     try {
+      console.log('Спроба виходу...');
+      
       const response = await fetch(`${API_URL}/auth/logout`, {
         method: 'POST',
         credentials: 'include'
@@ -120,7 +158,10 @@ export const AuthProvider = ({ children }) => {
         throw new Error(errorData.message || 'Помилка при виході');
       }
       
+      console.log('Вихід успішний');
+      
       setCurrentUser(null);
+      setAuthToken(null);
     } catch (error) {
       console.error('Помилка при виході:', error);
       throw error;
@@ -132,6 +173,20 @@ export const AuthProvider = ({ children }) => {
   // Перевірка, чи авторизований користувач
   const isAuthenticated = !!currentUser;
   
+  // Функція для отримання заголовків авторизації
+  const getAuthHeaders = () => {
+    const headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    };
+    
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    
+    return headers;
+  };
+  
   // Надання контексту
   const value = {
     currentUser,
@@ -140,7 +195,8 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     isAuthenticated,
-    checkAuthStatus
+    checkAuthStatus,
+    getAuthHeaders
   };
   
   return (

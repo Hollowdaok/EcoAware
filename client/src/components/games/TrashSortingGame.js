@@ -118,29 +118,88 @@ const TrashSortingGame = () => {
   };
 
   // Збереження результатів на сервері
+  // Збереження результатів на сервері
   const saveGameResults = async () => {
     try {
+      // Якщо користувач не авторизований, показуємо модальне вікно з пропозицією авторизуватися
+      if (!isAuthenticated) {
+        console.log('Користувач не авторизований. Показуємо модальне вікно з пропозицією авторизуватися.');
+        setShowAuthModal(true);
+        return;
+      }
+      
+      console.log('Відправляємо дані про результати гри:', {
+        level,
+        score,
+        correct: results.correct,
+        incorrect: results.incorrect,
+        total: results.total,
+        playTime: difficulties[level].timeLimit - timeLeft
+      });
+      
+      // Переконуємось, що всі дані передаються як числа
+      const gameData = {
+        level: Number(level),
+        score: Number(score),
+        correct: Number(results.correct),
+        incorrect: Number(results.incorrect),
+        total: Number(results.total),
+        playTime: Number(difficulties[level].timeLimit - timeLeft)
+      };
+      
       const response = await fetch(`${API_URL}/games/trash-sorting/results`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
-        body: JSON.stringify({
-          level,
-          score,
-          correct: results.correct,
-          incorrect: results.incorrect,
-          total: results.total,
-          playTime: difficulties[level].timeLimit - timeLeft
-        }),
+        credentials: 'include', // Важливо для передачі cookie з авторизацією
+        body: JSON.stringify(gameData),
       });
       
-      if (!response.ok) {
-        console.error('Помилка збереження результатів');
+      let data;
+      
+      try {
+        // Спочатку отримуємо відповідь як текст
+        const textResponse = await response.text();
+        console.log('Відповідь сервера (текст):', textResponse);
+        
+        // Спробуємо розпарсити відповідь як JSON
+        try {
+          data = JSON.parse(textResponse);
+        } catch (parseError) {
+          console.error('Помилка при розборі відповіді сервера як JSON:', parseError);
+          data = { message: textResponse }; // Використовуємо текст як повідомлення
+        }
+      } catch (responseError) {
+        console.error('Помилка при читанні відповіді сервера:', responseError);
+        throw new Error(`Помилка при обробці відповіді сервера: ${responseError.message}`);
       }
+      
+      // Перевіряємо статус відповіді
+      if (!response.ok) {
+        // Детальний лог для помилки
+        console.error('Відповідь сервера з помилкою:', response.status, data);
+        
+        // Якщо помилка авторизації, пропонуємо користувачу авторизуватися
+        if (response.status === 401) {
+          setShowAuthModal(true);
+          throw new Error(`Для збереження результатів необхідно авторизуватися`);
+        }
+        
+        throw new Error(`HTTP помилка ${response.status}: ${JSON.stringify(data)}`);
+      }
+      
+      console.log('Результат збереження гри:', data);
+      return data;
     } catch (error) {
-      console.error('Помилка:', error);
+      console.error('Помилка при збереженні результатів:', error);
+      
+      // Якщо це помилка авторизації, пропонуємо користувачу авторизуватися
+      if (error.message && (error.message.includes('401') || error.message.includes('авторизуватися'))) {
+        setShowAuthModal(true);
+      }
+      
+      return null;
     }
   };
 

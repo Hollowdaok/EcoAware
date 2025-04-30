@@ -18,6 +18,7 @@ const cookieOptions = {
 const requireAuth = (req, res, next) => {
   const token = req.cookies.token;
   
+  // Якщо немає токена - перенаправляємо на вхід
   if (!token) {
     return res.status(401).json({ 
       success: false, 

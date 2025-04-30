@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Badge, Spinner, Form, Alert } from 'react-bootstrap';
 import './Leaderboard.css';
+import { useAuth } from '../../contexts/AuthContext';
 
 // API URL
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -11,8 +12,9 @@ const Leaderboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedLevel, setSelectedLevel] = useState('all');
+  const { isAuthenticated } = useAuth();
   
-  // Завантаження даних таблиці рекордів
+  // Завантаження даних таблиці рекордів при зміні фільтра
   useEffect(() => {
     fetchLeaderboard();
   }, [selectedLevel]);
@@ -27,20 +29,40 @@ const Leaderboard = () => {
         ? `${API_URL}/games/trash-sorting/leaderboard`
         : `${API_URL}/games/trash-sorting/leaderboard?level=${selectedLevel}`;
       
+      console.log('Завантаження рейтингу з URL:', url);
+      
       const response = await fetch(url, {
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json'
+        }
       });
       
-      if (!response.ok) {
-        throw new Error('Помилка завантаження таблиці рекордів');
+      // Отримуємо текст відповіді
+      const responseText = await response.text();
+      console.log('Відповідь сервера (текст):', responseText);
+      
+      let data;
+      // Перевіряємо, чи відповідь - валідний JSON
+      try {
+        data = JSON.parse(responseText);
+      } catch (jsonError) {
+        console.error('Помилка при розборі JSON:', jsonError);
+        throw new Error(`Помилка формату відповіді: ${responseText}`);
       }
       
-      const data = await response.json();
+      // Перевірка статусу відповіді
+      if (!response.ok) {
+        console.error('Помилка запиту:', response.status, data);
+        throw new Error(data.message || 'Помилка при отриманні рейтингу');
+      }
+      
+      console.log('Отримані дані рейтингу:', data);
       
       if (data.success) {
-        setLeaderboard(data.leaderboard);
+        setLeaderboard(data.leaderboard || []);
       } else {
-        setError('Не вдалося отримати дані рейтингу');
+        setError(data.message || 'Не вдалося отримати дані рейтингу');
       }
     } catch (err) {
       console.error('Помилка при завантаженні таблиці рекордів:', err);
@@ -57,6 +79,8 @@ const Leaderboard = () => {
   
   // Функція для форматування дати
   const formatDate = (dateString) => {
+    if (!dateString) return 'Дата невідома';
+    
     const date = new Date(dateString);
     return date.toLocaleDateString('uk-UA', {
       day: '2-digit',
@@ -102,6 +126,17 @@ const Leaderboard = () => {
         </div>
       </div>
       
+      {!isAuthenticated && (
+        <Alert variant="info" className="mt-3">
+          <Alert.Heading>Увійдіть, щоб зберігати свої результати</Alert.Heading>
+          <p>
+            Для збереження результатів гри та участі в таблиці рекордів необхідно 
+            авторизуватися. Зіграйте в гру, увійдіть у свій обліковий запис та 
+            ваші результати будуть автоматично додані до таблиці рекордів!
+          </p>
+        </Alert>
+      )}
+      
       {error && (
         <Alert variant="danger" className="mt-3">
           {error}
@@ -117,7 +152,12 @@ const Leaderboard = () => {
         <>
           {leaderboard.length === 0 ? (
             <Alert variant="info" className="mt-3">
-              Поки що немає результатів для відображення. Ви можете бути першим!
+              <p>Поки що немає результатів для відображення.</p> 
+              {isAuthenticated ? (
+                <p>Зіграйте в гру та станьте першим у рейтингу!</p>
+              ) : (
+                <p>Увійдіть в систему та отримайте високий результат, щоб стати першим у рейтингу!</p>
+              )}
             </Alert>
           ) : (
             <Table striped hover responsive className="leaderboard-table">
