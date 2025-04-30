@@ -1,23 +1,85 @@
 // src/contexts/AuthContext.js
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 
-// Створення контексту авторизації
+// Базовий URL для API
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+// Створення контексту
 const AuthContext = createContext();
 
-// Hook для зручного використання контексту авторизації
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+// Hook для використання контексту авторизації
+export const useAuth = () => useContext(AuthContext);
 
+// Провайдер контексту
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [authenticated, setAuthenticated] = useState(false);
   
-  // Функція для авторизації
-  const login = async (username, password) => {
+  // Перевірка статусу авторизації при завантаженні
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+  
+  // Функція для перевірки статусу авторизації
+  const checkAuthStatus = async () => {
     try {
-      const response = await fetch('localhost:5000/ai/auth/login', {
+      const response = await fetch(`${API_URL}/auth/status`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+      
+      const data = await response.json();
+      
+      if (data.isAuthenticated) {
+        setCurrentUser(data.user);
+      } else {
+        setCurrentUser(null);
+      }
+    } catch (error) {
+      console.error('Помилка перевірки авторизації:', error);
+      setCurrentUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Реєстрація нового користувача
+  const register = async (formData) => {
+    setLoading(true);
+    
+    try {
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(formData)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || errorData.errors[0]?.msg || 'Помилка реєстрації');
+      }
+      
+      const data = await response.json();
+      setCurrentUser(data.user);
+      
+      return data;
+    } catch (error) {
+      console.error('Помилка реєстрації:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Вхід користувача
+  const login = async (username, password) => {
+    setLoading(true);
+    
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -33,160 +95,57 @@ export const AuthProvider = ({ children }) => {
       
       const data = await response.json();
       setCurrentUser(data.user);
-      setAuthenticated(true);
+      
       return data;
     } catch (error) {
       console.error('Помилка авторизації:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
   
-  // Функція для реєстрації
-  const register = async (userData) => {
+  // Вихід користувача
+  const logout = async () => {
+    setLoading(true);
+    
     try {
-      const response = await fetch('localhost:5000/ai/auth/register', {
+      const response = await fetch(`${API_URL}/auth/logout`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(userData)
+        credentials: 'include'
       });
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(
-          errorData.errors 
-            ? errorData.errors.map(err => err.msg).join(', ') 
-            : (errorData.message || 'Помилка реєстрації')
-        );
+        throw new Error(errorData.message || 'Помилка при виході');
       }
-      
-      const data = await response.json();
-      setCurrentUser(data.user);
-      setAuthenticated(true);
-      return data;
-    } catch (error) {
-      console.error('Помилка реєстрації:', error);
-      throw error;
-    }
-  };
-  
-  // Функція для виходу
-  const logout = async () => {
-    try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include'
-      });
       
       setCurrentUser(null);
-      setAuthenticated(false);
     } catch (error) {
-      console.error('Помилка виходу:', error);
-    }
-  };
-  
-  // Перевірка статусу авторизації при завантаженні
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        const response = await fetch('/api/auth/status', {
-          method: 'GET',
-          credentials: 'include'
-        });
-        
-        const data = await response.json();
-        
-        if (data.isAuthenticated) {
-          setCurrentUser(data.user);
-          setAuthenticated(true);
-        } else {
-          setCurrentUser(null);
-          setAuthenticated(false);
-        }
-      } catch (error) {
-        console.error('Помилка перевірки авторизації:', error);
-        setCurrentUser(null);
-        setAuthenticated(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    checkAuthStatus();
-  }, []);
-  
-  // Функція для отримання додаткової інформації про користувача
-  const getUserProfile = async () => {
-    try {
-      const response = await fetch('/api/auth/me', {
-        method: 'GET',
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Не вдалося отримати дані профілю');
-      }
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setCurrentUser(data.user);
-      }
-      
-      return data.user;
-    } catch (error) {
-      console.error('Помилка отримання профілю:', error);
+      console.error('Помилка при виході:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
   
-  // Функція для оновлення профілю користувача
-  const updateUserProfile = async (userData) => {
-    try {
-      const response = await fetch('/api/auth/me', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(userData)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.errors 
-            ? errorData.errors.map(err => err.msg).join(', ') 
-            : (errorData.message || 'Помилка оновлення профілю')
-        );
-      }
-      
-      const data = await response.json();
-      setCurrentUser(data.user);
-      return data;
-    } catch (error) {
-      console.error('Помилка оновлення профілю:', error);
-      throw error;
-    }
-  };
+  // Перевірка, чи авторизований користувач
+  const isAuthenticated = !!currentUser;
   
-  // Значення контексту
+  // Надання контексту
   const value = {
     currentUser,
-    authenticated,
     loading,
-    login,
     register,
+    login,
     logout,
-    getUserProfile,
-    updateUserProfile
+    isAuthenticated,
+    checkAuthStatus
   };
   
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

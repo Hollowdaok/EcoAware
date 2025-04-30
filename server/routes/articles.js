@@ -1,96 +1,124 @@
+// server/routes/articles.js
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Article = require('../models/Article');
+const ViewedArticle = require('../models/ViewedArticle');
+const authRouter = require('./auth');
 
+// Get the requireAuth middleware
+const requireAuth = authRouter.requireAuth;
+
+// Get all articles
 router.get('/', async (req, res) => {
   try {
     const articles = await Article.find().sort({ date: -1 });
     res.json(articles);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Помилка сервера' });
+    console.error('Error fetching articles:', err);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-router.get('/category/:categoryName', async (req, res) => {
+// Important: Define the /viewed endpoint BEFORE /:id to prevent route conflicts
+router.get('/viewed', requireAuth, async (req, res) => {
   try {
-    const articles = await Article.find({ category: req.params.categoryName }).sort({ date: -1 });
-    res.json(articles);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Помилка сервера' });
+    console.log('Viewed articles route hit. User ID:', req.user.id);
+    
+    // Check if ViewedArticle model is registered
+    if (!mongoose.modelNames().includes('ViewedArticle')) {
+      console.error('ViewedArticle model is not registered!');
+      return res.status(500).json({
+        success: false,
+        message: 'Server error: Model not registered',
+        error: 'ViewedArticle model is not registered'
+      });
+    }
+    
+    // Get viewed articles for the user, sorted by last viewed date
+    const viewedArticles = await ViewedArticle.find({ userId: req.user.id })
+      .sort({ lastViewedAt: -1 });
+    
+    console.log('Found viewed articles:', viewedArticles.length);
+    
+    res.status(200).json({ 
+      success: true, 
+      articles: viewedArticles 
+    });
+  } catch (error) {
+    console.error('Error fetching viewed articles:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while fetching viewed articles',
+      error: error.toString(),
+      stack: error.stack 
+    });
   }
 });
 
+// Get article by ID
 router.get('/:id', async (req, res) => {
   try {
     const article = await Article.findById(req.params.id);
+    
     if (!article) {
-      return res.status(404).json({ message: 'Статтю не знайдено' });
+      return res.status(404).json({ message: 'Article not found' });
     }
+    
     res.json(article);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Помилка сервера' });
+    console.error('Error fetching article:', err);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-router.post('/', async (req, res) => {
+// Track article view - endpoint for authenticated users
+router.post('/track-view', requireAuth, async (req, res) => {
   try {
-    const newArticle = new Article(req.body);
-    const savedArticle = await newArticle.save();
-    res.status(201).json(savedArticle);
-  } catch (err) {
-    console.error(err);
-    res.status(400).json({ message: err.message });
-  }
-});
-
-router.put('/:id', async (req, res) => {
-  try {
-    const updatedArticle = await Article.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
-    if (!updatedArticle) {
-      return res.status(404).json({ message: 'Статтю не знайдено' });
-    }
-    res.json(updatedArticle);
-  } catch (err) {
-    console.error(err);
-    res.status(400).json({ message: err.message });
-  }
-});
-
-router.delete('/:id', async (req, res) => {
-  try {
-    const article = await Article.findByIdAndDelete(req.params.id);
-    if (!article) {
-      return res.status(404).json({ message: 'Статтю не знайдено' });
-    }
-    res.json({ message: 'Статтю видалено успішно' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Помилка сервера' });
-  }
-});
-
-router.get('/search/:query', async (req, res) => {
-  try {
-    const searchQuery = req.params.query;
-    const articles = await Article.find({
-      $or: [
-        { title: { $regex: searchQuery, $options: 'i' } },
-        { description: { $regex: searchQuery, $options: 'i' } },
-        { content: { $regex: searchQuery, $options: 'i' } }
-      ]
-    }).sort({ date: -1 });
+    const { articleId, title, category } = req.body;
+    const userId = req.user.id;
     
-    res.json(articles);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Помилка сервера' });
+    console.log('Tracking article view:', { userId, articleId, title });
+    
+    if (!articleId || !title) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Article ID and title are required' 
+      });
+    }
+    
+    // Check if the user has already viewed this article
+    let viewedArticle = await ViewedArticle.findOne({ 
+      userId, 
+      articleId 
+    });
+    
+    if (viewedArticle) {
+      // If article was already viewed, update it
+      viewedArticle.viewCount += 1;
+      viewedArticle.lastViewedAt = Date.now();
+      await viewedArticle.save();
+    } else {
+      // If not viewed yet, create new record
+      viewedArticle = new ViewedArticle({
+        userId,
+        articleId,
+        title,
+        category: category || 'Інше'
+      });
+      await viewedArticle.save();
+    }
+    
+    res.status(200).json({ 
+      success: true, 
+      message: 'Article view tracked successfully' 
+    });
+  } catch (error) {
+    console.error('Error tracking article view:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while tracking article view' 
+    });
   }
 });
 

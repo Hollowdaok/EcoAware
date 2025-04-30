@@ -1,7 +1,10 @@
-// src/components/games/TrashSortingGame/Leaderboard.js
+// src/components/games/Leaderboard.js
 import React, { useState, useEffect } from 'react';
 import { Table, Badge, Spinner, Form, Alert } from 'react-bootstrap';
 import './Leaderboard.css';
+
+// API URL
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState([]);
@@ -21,10 +24,12 @@ const Leaderboard = () => {
     
     try {
       const url = selectedLevel === 'all' 
-        ? '/api/games/trash-sorting/leaderboard'
-        : `/api/games/trash-sorting/leaderboard?level=${selectedLevel}`;
+        ? `${API_URL}/games/trash-sorting/leaderboard`
+        : `${API_URL}/games/trash-sorting/leaderboard?level=${selectedLevel}`;
       
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        credentials: 'include'
+      });
       
       if (!response.ok) {
         throw new Error('Помилка завантаження таблиці рекордів');

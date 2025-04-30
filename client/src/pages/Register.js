@@ -1,8 +1,8 @@
 // src/pages/Register.js
 import React, { useState } from 'react';
 import { Container, Row, Col, Form, Button, Card, Alert } from 'react-bootstrap';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; // Імпорт контексту авторизації
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -15,7 +15,11 @@ const Register = () => {
   const [errors, setErrors] = useState([]);
   
   const navigate = useNavigate();
-  const { register } = useAuth(); // Використання функції реєстрації з контексту
+  const location = useLocation();
+  const { register } = useAuth();
+  
+  // Отримання параметра redirect з URL, якщо він є
+  const redirectPath = new URLSearchParams(location.search).get('redirect') || '/';
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -43,8 +47,8 @@ const Register = () => {
       // Використання функції register з контексту авторизації
       await register(formData);
       
-      // Перенаправлення на головну сторінку
-      navigate('/');
+      // Перенаправлення на сторінку з редіректом або головну
+      navigate(redirectPath);
     } catch (err) {
       console.error('Помилка реєстрації:', err);
       setErrors([{ msg: err.message || 'Помилка реєстрації. Спробуйте ще раз.' }]);
@@ -142,7 +146,7 @@ const Register = () => {
               <div className="text-center mt-4">
                 <p>
                   Вже маєте обліковий запис?{' '}
-                  <Link to="/login" className="text-decoration-none">
+                  <Link to={`/login${redirectPath !== '/' ? `?redirect=${redirectPath}` : ''}`} className="text-decoration-none">
                     Увійти
                   </Link>
                 </p>

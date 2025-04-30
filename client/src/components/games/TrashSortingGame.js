@@ -1,7 +1,12 @@
-// src/components/games/TrashSortingGame/TrashSortingGame.js
+// src/components/games/TrashSortingGame.js
 import React, { useState, useEffect, useRef } from 'react';
 import { Container, Row, Col, Button, Modal, ProgressBar } from 'react-bootstrap';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import './TrashSortingGame.css';
+
+// API URL
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 // Категорії для сортування сміття
 const TRASH_CATEGORIES = {
@@ -32,7 +37,7 @@ const TRASH_ITEMS = [
   { id: 15, name: 'Яєчна шкаралупа', category: TRASH_CATEGORIES.ORGANIC.id, image: '/items/eggshell.png' }
 ];
 
-// Плейсхолдери для зображень - можна замінити справжніми зображеннями в майбутньому
+// Використовуємо плейсхолдери для зображень
 const placeholderItems = TRASH_ITEMS.map(item => ({
   ...item,
   image: `https://via.placeholder.com/150?text=${encodeURIComponent(item.name)}`
@@ -40,6 +45,10 @@ const placeholderItems = TRASH_ITEMS.map(item => ({
 
 // Компонент гри
 const TrashSortingGame = () => {
+  // Використання контексту авторизації
+  const { currentUser, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  
   // Стани гри
   const [gameStarted, setGameStarted] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -51,6 +60,7 @@ const TrashSortingGame = () => {
   const [results, setResults] = useState({ correct: 0, incorrect: 0, total: 0 });
   const [showTutorial, setShowTutorial] = useState(true);
   const [showResultModal, setShowResultModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   
   const timerRef = useRef(null);
   const gameContainerRef = useRef(null);
@@ -61,10 +71,6 @@ const TrashSortingGame = () => {
     2: { itemCount: 4, timeLimit: 50, speedMultiplier: 1.2 },
     3: { itemCount: 5, timeLimit: 40, speedMultiplier: 1.5 }
   };
-  
-  // Перевірка авторизації користувача
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Генерувати випадкові предмети для поточного рівня
   const generateItems = () => {
@@ -80,7 +86,7 @@ const TrashSortingGame = () => {
     setShowTutorial(false);
     setScore(0);
     
-    // Важливо! Встановлюємо час відповідно до обраного рівня
+    // Встановлюємо час відповідно до обраного рівня
     const selectedTimeLimit = difficulties[level].timeLimit;
     setTimeLeft(selectedTimeLimit);
     
@@ -99,31 +105,8 @@ const TrashSortingGame = () => {
         return prevTime - 1;
       });
     }, 1000);
-    
-    // Перевірка статусу авторизації
-    checkAuthStatus();
   };
   
-  // Перевірка статусу авторизації користувача
-  const checkAuthStatus = async () => {
-    try {
-      const response = await fetch('/api/auth/status', {
-        method: 'GET',
-        credentials: 'include'
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setIsLoggedIn(data.isAuthenticated);
-      } else {
-        setIsLoggedIn(false);
-      }
-    } catch (error) {
-      console.error('Помилка перевірки авторизації:', error);
-      setIsLoggedIn(false);
-    }
-  };
-
   // Завершення гри
   const endGame = () => {
     clearInterval(timerRef.current);
@@ -137,11 +120,12 @@ const TrashSortingGame = () => {
   // Збереження результатів на сервері
   const saveGameResults = async () => {
     try {
-      const response = await fetch('/api/games/trash-sorting/results', {
+      const response = await fetch(`${API_URL}/games/trash-sorting/results`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           level,
           score,
@@ -188,14 +172,8 @@ const TrashSortingGame = () => {
       if (isCorrect) {
         setScore(prevScore => prevScore + 10 * level);
         newResults.correct += 1;
-        
-        // Звуковий ефект правильного сортування (можна додати пізніше)
-        // playSound('correct');
       } else {
         newResults.incorrect += 1;
-        
-        // Звуковий ефект неправильного сортування (можна додати пізніше)
-        // playSound('incorrect');
       }
       
       setResults(newResults);
@@ -248,6 +226,18 @@ const TrashSortingGame = () => {
   const handleRetryLevel = () => {
     setShowResultModal(false);
     startGame();
+  };
+  
+  // Обробник переходу до сторінки входу
+  const handleLogin = () => {
+    setShowAuthModal(false);
+    navigate('/login?redirect=/games/trash-sorting');
+  };
+  
+  // Обробник переходу до сторінки реєстрації
+  const handleRegister = () => {
+    setShowAuthModal(false);
+    navigate('/register?redirect=/games/trash-sorting');
   };
 
   // Очищення таймера при розмонтуванні компонента
@@ -386,7 +376,7 @@ const TrashSortingGame = () => {
               <p>Точність: {results.total > 0 ? Math.round((results.correct / results.total) * 100) : 0}%</p>
             </div>
             
-            {!isLoggedIn && (
+            {!isAuthenticated && (
               <div className="auth-notification">
                 <div className="auth-message">
                   <i className="bi bi-exclamation-circle"></i>
@@ -447,7 +437,7 @@ const TrashSortingGame = () => {
               <Button 
                 variant="primary" 
                 size="lg" 
-                href="/login"
+                onClick={handleLogin}
                 className="w-100"
               >
                 Увійти
@@ -456,7 +446,7 @@ const TrashSortingGame = () => {
               <Button 
                 variant="outline-primary" 
                 size="lg" 
-                href="/register"
+                onClick={handleRegister}
                 className="w-100"
               >
                 Зареєструватися

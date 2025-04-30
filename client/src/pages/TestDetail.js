@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Button, Card, Badge, ProgressBar, Spinner, Alert } from 'react-bootstrap';
 import '../styles/TestDetail.css';
+// Імпортуємо трекер для відстеження пройдених тестів
+import CompletedTestTracker from '../components/tracking/CompletedTestTracker';
 
 const TestDetail = () => {
   const { id } = useParams();
@@ -322,23 +324,23 @@ const TestDetail = () => {
                   </Badge>
                   <Card.Title className="question-text mb-4">{question.text}</Card.Title>
                   {question.options.map((option) => {
-  const isSelected = selectedOptions.includes(option._id);
-  
-  return (
-    <div 
-      key={option._id}
-      className={`custom-option-item ${isSelected ? 'selected' : ''}`}
-      onClick={() => handleOptionSelect(option._id)}
-    >
-      <div className="custom-checkbox">
-        {isSelected && <i className="bi bi-check-lg"></i>}
-      </div>
-      <div className="custom-option-text">
-        {option.text}
-      </div>
-    </div>
-  );
-})}
+                    const isSelected = selectedOptions.includes(option._id);
+                    
+                    return (
+                      <div 
+                        key={option._id}
+                        className={`custom-option-item ${isSelected ? 'selected' : ''}`}
+                        onClick={() => handleOptionSelect(option._id)}
+                      >
+                        <div className="custom-checkbox">
+                          {isSelected && <i className="bi bi-check-lg"></i>}
+                        </div>
+                        <div className="custom-option-text">
+                          {option.text}
+                        </div>
+                      </div>
+                    );
+                  })}
                   
                   <div className="d-flex justify-content-between mt-4">
                     <Button 
@@ -374,6 +376,16 @@ const TestDetail = () => {
     return (
       <div className="results-container py-5">
         <Container>
+          {/* Додаємо компонент відстеження результатів тесту */}
+          <CompletedTestTracker 
+            testId={test._id}
+            title={test.title}
+            category={test.category}
+            score={results.score}
+            correctAnswers={results.correctAnswers}
+            totalQuestions={results.totalQuestions}
+          />
+          
           <Row className="justify-content-center">
             <Col md={10} lg={8}>
               <Card className="results-card">

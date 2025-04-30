@@ -1,11 +1,11 @@
 // src/components/Navbar.js
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Navbar, Nav, Container, Button, NavDropdown } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; // Імпорт контексту авторизації
+import { useAuth } from '../contexts/AuthContext';
 
 const NavBar = () => {
-  const { currentUser, authenticated, logout } = useAuth(); // Використання контексту авторизації
+  const { currentUser, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
 
@@ -40,7 +40,7 @@ const NavBar = () => {
           </Nav>
           
           <Nav>
-            {authenticated ? (
+            {isAuthenticated ? (
               // Меню для авторизованого користувача
               <NavDropdown 
                 title={currentUser ? currentUser.username : 'Користувач'} 

@@ -96,7 +96,6 @@ const EcoTestsPage = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
-              <Button variant="success" type="submit">Шукати</Button>
             </Form>
           </Col>
         </Row>

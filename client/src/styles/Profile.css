@@ -1,0 +1,93 @@
+/* src/styles/Profile.css */
+
+.avatar-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+  
+  .bg-light-success {
+    background-color: rgba(40, 167, 69, 0.15);
+  }
+  
+  .user-stats .badge {
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  
+  .stats-card {
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease;
+  }
+  
+  .stats-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .stats-card h2 {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  .stats-card p {
+    font-size: 0.9rem;
+  }
+  
+  .nav-pills .nav-link {
+    color: #28a745;
+    background-color: transparent;
+    border-radius: 0.25rem;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
+  }
+  
+  .nav-pills .nav-link:hover {
+    background-color: rgba(40, 167, 69, 0.1);
+  }
+  
+  .nav-pills .nav-link.active {
+    background-color: #28a745;
+    color: white;
+  }
+  
+  .tab-content {
+    transition: all 0.3s ease;
+  }
+  
+  /* Таблиця з результатами */
+  .table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+  }
+  
+  /* Стилі для карток зі статтями */
+  .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Стилі для мобільних пристроїв */
+  @media (max-width: 768px) {
+    .nav-pills {
+      display: flex;
+      flex-direction: row;
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+      white-space: nowrap;
+      padding-bottom: 0.5rem;
+    }
+    
+    .nav-pills .nav-item {
+      margin-right: 0.5rem;
+    }
+    
+    .nav-pills .nav-link {
+      padding: 0.5rem 1rem;
+    }
+  }

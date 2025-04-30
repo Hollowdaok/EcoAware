@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Container, Row, Col, Badge, Button, Spinner } from 'react-bootstrap';
 import '../styles/ArticleDetail.css';
+// Імпортуємо трекер для відстеження перегляду статей
+import ViewedArticleTracker from '../components/tracking/ViewedArticleTracker';
 
 const ArticleDetail = () => {
   const { id } = useParams();
@@ -103,37 +105,44 @@ const ArticleDetail = () => {
 
   return (
     <>
+      {/* Додаємо компонент відстеження перегляду статті */}
+      <ViewedArticleTracker 
+        articleId={article._id} 
+        title={article.title} 
+        category={article.category} 
+      />
+        
       {/* Hero Banner */}
       <div className="article-hero py-5">
-  <Container>
-    <Row className="justify-content-center">
-      <Col md={10} lg={8}>
-        <div className="d-flex align-items-center mb-4">
-          <Link to="/knowledge" className="btn btn-outline-light me-3">
-            Назад до списку
-          </Link>
-          <Badge 
-            bg="light" 
-            className="px-3 py-2" 
-            style={{ fontSize: '0.85rem', color: '#198754' }}
-          >
-            {article.category}
-          </Badge>
-        </div>
-        
-        <h1 className="display-5 fw-bold text-light mb-3">{article.title}</h1>
-        <div className="d-flex align-items-center text-light opacity-75 small">
-          <span className="me-3">
-            <i className="bi bi-calendar3 me-1"></i> {formatDate(article.date)}
-          </span>
-          <span>
-            <i className="bi bi-clock me-1"></i> Час читання: {article.readTime}
-          </span>
-        </div>
-      </Col>
-    </Row>
-  </Container>
-</div>
+        <Container>
+          <Row className="justify-content-center">
+            <Col md={10} lg={8}>
+              <div className="d-flex align-items-center mb-4">
+                <Link to="/knowledge" className="btn btn-outline-light me-3">
+                  Назад до списку
+                </Link>
+                <Badge 
+                  bg="light" 
+                  className="px-3 py-2" 
+                  style={{ fontSize: '0.85rem', color: '#198754' }}
+                >
+                  {article.category}
+                </Badge>
+              </div>
+              
+              <h1 className="display-5 fw-bold text-light mb-3">{article.title}</h1>
+              <div className="d-flex align-items-center text-light opacity-75 small">
+                <span className="me-3">
+                  <i className="bi bi-calendar3 me-1"></i> {formatDate(article.date)}
+                </span>
+                <span>
+                  <i className="bi bi-clock me-1"></i> Час читання: {article.readTime}
+                </span>
+              </div>
+            </Col>
+          </Row>
+        </Container>
+      </div>
 
       {/* Article Content */}
       <Container className="py-5">

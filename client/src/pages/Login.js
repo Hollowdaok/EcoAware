@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Form, Button, Card, Alert } from 'react-bootstrap';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; // Імпорт контексту авторизації
+import { useAuth } from '../contexts/AuthContext';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -14,7 +14,7 @@ const Login = () => {
   
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth(); // Використання функції входу з контексту
+  const { login } = useAuth();
   
   // Отримання параметра redirect з URL, якщо він є
   const redirectPath = new URLSearchParams(location.search).get('redirect') || '/';
@@ -30,7 +30,7 @@ const Login = () => {
     setError(null);
     
     try {
-      // Використання функції login з контексту авторизації
+      // Виклик функції login з контексту авторизації
       await login(formData.username, formData.password);
       
       // Перенаправлення на попередню сторінку або головну
@@ -98,7 +98,7 @@ const Login = () => {
               <div className="text-center mt-4">
                 <p>
                   Не маєте облікового запису?{' '}
-                  <Link to="/register" className="text-decoration-none">
+                  <Link to={`/register${redirectPath !== '/' ? `?redirect=${redirectPath}` : ''}`} className="text-decoration-none">
                     Зареєструватися
                   </Link>
                 </p>

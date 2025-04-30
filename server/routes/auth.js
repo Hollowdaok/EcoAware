@@ -26,17 +26,108 @@ const requireAuth = (req, res, next) => {
   }
   
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret');
+    // Додайте лог для відладки
+    console.log('Перевірка токена:', token.substring(0, 20) + '...');
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'ecoaware_secure_jwt_token_2024');
     req.user = decoded;
+    console.log('Успішна авторизація користувача:', decoded.username);
     next();
   } catch (error) {
     console.error('Помилка авторизації:', error);
-    res.status(401).json({ 
-      success: false, 
-      message: 'Недійсний токен авторизації' 
-    });
+    res.status(401).json({ success: false, message: 'Недійсний токен авторизації' });
   }
 };
+
+router.get('/test-auth', requireAuth, (req, res) => {
+  res.json({
+    success: true,
+    message: 'Авторизація працює!',
+    user: {
+      id: req.user.id,
+      username: req.user.username
+    }
+  });
+});
+
+// Тестовий маршрут для перевірки моделей
+router.get('/test-models', requireAuth, async (req, res) => {
+  try {
+    const mongoose = require('mongoose');
+    
+    // Отримуємо список колекцій в базі даних
+    const collections = await mongoose.connection.db.listCollections().toArray();
+    const collectionNames = collections.map(c => c.name);
+    
+    // Виводимо моделі Mongoose
+    const registeredModels = mongoose.modelNames();
+    
+    res.json({
+      success: true,
+      message: 'Перевірка моделей',
+      collections: collectionNames,
+      registeredModels: registeredModels
+    });
+  } catch (error) {
+    console.error('Помилка при перевірці моделей:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Помилка сервера',
+      error: error.message
+    });
+  }
+});
+
+// Тестовий маршрут для створення тестових записів
+router.post('/test-create-records', requireAuth, async (req, res) => {
+  try {
+    const ViewedArticle = require('../models/ViewedArticle');
+    const CompletedTest = require('../models/CompletedTest');
+    
+    // Створення тестового запису для ViewedArticle
+    const viewedArticle = new ViewedArticle({
+      userId: req.user.id,
+      articleId: 'test-article-123',
+      title: 'Тестова стаття',
+      category: 'Тест',
+      viewCount: 1,
+      firstViewedAt: Date.now(),
+      lastViewedAt: Date.now()
+    });
+    
+    await viewedArticle.save();
+    
+    // Створення тестового запису для CompletedTest
+    const completedTest = new CompletedTest({
+      userId: req.user.id,
+      testId: 'test-test-456',
+      title: 'Тестовий тест',
+      category: 'Тест',
+      score: 85,
+      correctAnswers: 17,
+      totalQuestions: 20,
+      completedAt: Date.now()
+    });
+    
+    await completedTest.save();
+    
+    res.status(200).json({ 
+      success: true, 
+      message: 'Тестові записи успішно створено',
+      data: {
+        viewedArticle,
+        completedTest
+      }
+    });
+  } catch (error) {
+    console.error('Помилка при створенні тестових записів:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Помилка сервера',
+      error: error.message
+    });
+  }
+});
 
 // Перевірка статусу авторизації
 router.get('/status', (req, res) => {
@@ -47,7 +138,7 @@ router.get('/status', (req, res) => {
   }
   
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'ecoaware_secure_jwt_token_2024');
     res.json({ 
       isAuthenticated: true, 
       user: {
@@ -122,7 +213,7 @@ router.post('/register', [
     // Створення JWT токена
     const token = jwt.sign(
       { id: newUser._id, username: newUser.username, role: newUser.role },
-      process.env.JWT_SECRET || 'your_jwt_secret',
+      process.env.JWT_SECRET || 'ecoaware_secure_jwt_token_2024',
       { expiresIn: '7d' }
     );
     
@@ -196,7 +287,7 @@ router.post('/login', [
     // Створення JWT токена
     const token = jwt.sign(
       { id: user._id, username: user.username, role: user.role },
-      process.env.JWT_SECRET || 'your_jwt_secret',
+      process.env.JWT_SECRET || 'ecoaware_secure_jwt_token_2024',
       { expiresIn: '7d' }
     );
     
