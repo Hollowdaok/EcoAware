@@ -1,5 +1,4 @@
-// src/components/games/Leaderboard.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Badge, Spinner, Form, Alert } from 'react-bootstrap';
 import './Leaderboard.css';
 import { useAuth } from '../../contexts/AuthContext';
@@ -14,13 +13,8 @@ const Leaderboard = () => {
   const [selectedLevel, setSelectedLevel] = useState('all');
   const { isAuthenticated } = useAuth();
   
-  // Завантаження даних таблиці рекордів при зміні фільтра
-  useEffect(() => {
-    fetchLeaderboard();
-  }, [selectedLevel]);
-  
-  // Отримання даних з сервера
-  const fetchLeaderboard = async () => {
+  // Використовуємо useCallback для функції fetchLeaderboard
+  const fetchLeaderboard = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -28,8 +22,6 @@ const Leaderboard = () => {
       const url = selectedLevel === 'all' 
         ? `${API_URL}/games/trash-sorting/leaderboard`
         : `${API_URL}/games/trash-sorting/leaderboard?level=${selectedLevel}`;
-      
-      console.log('Завантаження рейтингу з URL:', url);
       
       const response = await fetch(url, {
         credentials: 'include',
@@ -40,7 +32,6 @@ const Leaderboard = () => {
       
       // Отримуємо текст відповіді
       const responseText = await response.text();
-      console.log('Відповідь сервера (текст):', responseText);
       
       let data;
       // Перевіряємо, чи відповідь - валідний JSON
@@ -57,8 +48,6 @@ const Leaderboard = () => {
         throw new Error(data.message || 'Помилка при отриманні рейтингу');
       }
       
-      console.log('Отримані дані рейтингу:', data);
-      
       if (data.success) {
         setLeaderboard(data.leaderboard || []);
       } else {
@@ -70,7 +59,12 @@ const Leaderboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedLevel]); // Залежності для useCallback
+  
+  // Завантаження даних таблиці рекордів при зміні фільтра
+  useEffect(() => {
+    fetchLeaderboard();
+  }, [fetchLeaderboard]); // Тепер fetchLeaderboard є залежністю
   
   // Обробник зміни рівня для фільтрації
   const handleLevelChange = (e) => {

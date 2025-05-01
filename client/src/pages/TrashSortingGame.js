@@ -1,7 +1,5 @@
-// src/pages/TrashSortingGame.js (оновлений)
 import React, { useState } from 'react';
-import { Container, Row, Col, Button, Card, Tabs, Tab } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
+import { Container, Row, Col, Card, Tabs, Tab } from 'react-bootstrap';
 import TrashSortingGame from '../components/games/TrashSortingGame';
 import Leaderboard from '../components/games/Leaderboard';
 
@@ -50,15 +48,6 @@ const TrashSortingGamePage = () => {
                         <li>Зменшує забруднення повітря і води</li>
                         <li>Економить енергію</li>
                       </ul>
-                    </Card.Body>
-                  </Card>
-                  
-                  <Card className="mb-4">
-                    <Card.Header as="h5">Рівні складності</Card.Header>
-                    <Card.Body>
-                      <p><strong>Рівень 1:</strong> Сортування базових типів відходів з достатнім часом.</p>
-                      <p><strong>Рівень 2:</strong> Збільшена кількість предметів та менше часу.</p>
-                      <p><strong>Рівень 3:</strong> Найскладніший рівень з багатьма різними типами відходів та коротким часовим обмеженням.</p>
                     </Card.Body>
                   </Card>
                   

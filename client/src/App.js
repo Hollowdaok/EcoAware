@@ -1,4 +1,3 @@
-// src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import NavBar from './components/Navbar';
@@ -7,7 +6,6 @@ import EcoKnowledge from './pages/EcoKnowledge';
 import ArticleDetail from './pages/ArticleDetail';
 import Tests from './pages/Tests';
 import TestDetail from './pages/TestDetail';
-import EcoGames from './pages/EcoGames';
 import TrashSortingGamePage from './pages/TrashSortingGame';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -43,7 +41,6 @@ const AppRoutes = () => {
       <Route path="/knowledge/article/:id" element={<ArticleDetail />} />
       <Route path="/tests" element={<Tests />} />
       <Route path="/tests/:id" element={<TestDetail />} />
-      <Route path="/games" element={<EcoGames />} />
       <Route path="/games/trash-sorting" element={<TrashSortingGamePage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />

@@ -28,11 +28,9 @@ const requireAuth = (req, res, next) => {
   
   try {
     // Додайте лог для відладки
-    console.log('Перевірка токена:', token.substring(0, 20) + '...');
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'ecoaware_secure_jwt_token_2024');
     req.user = decoded;
-    console.log('Успішна авторизація користувача:', decoded.username);
     next();
   } catch (error) {
     console.error('Помилка авторизації:', error);

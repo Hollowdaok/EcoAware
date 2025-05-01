@@ -23,7 +23,6 @@ router.get('/', async (req, res) => {
 // Important: Define the /viewed endpoint BEFORE /:id to prevent route conflicts
 router.get('/viewed', requireAuth, async (req, res) => {
   try {
-    console.log('Viewed articles route hit. User ID:', req.user.id);
     
     // Check if ViewedArticle model is registered
     if (!mongoose.modelNames().includes('ViewedArticle')) {
@@ -38,8 +37,6 @@ router.get('/viewed', requireAuth, async (req, res) => {
     // Get viewed articles for the user, sorted by last viewed date
     const viewedArticles = await ViewedArticle.find({ userId: req.user.id })
       .sort({ lastViewedAt: -1 });
-    
-    console.log('Found viewed articles:', viewedArticles.length);
     
     res.status(200).json({ 
       success: true, 
@@ -77,8 +74,6 @@ router.post('/track-view', requireAuth, async (req, res) => {
   try {
     const { articleId, title, category } = req.body;
     const userId = req.user.id;
-    
-    console.log('Tracking article view:', { userId, articleId, title });
     
     if (!articleId || !title) {
       return res.status(400).json({ 

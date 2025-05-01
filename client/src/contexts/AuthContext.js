@@ -24,7 +24,6 @@ export const AuthProvider = ({ children }) => {
   // Функція для перевірки статусу авторизації з додатковим логуванням
   const checkAuthStatus = async () => {
     try {
-      console.log('Перевірка статусу авторизації...');
       
       const response = await fetch(`${API_URL}/auth/status`, {
         method: 'GET',
@@ -35,10 +34,8 @@ export const AuthProvider = ({ children }) => {
       });
       
       const data = await response.json();
-      console.log('Відповідь статусу авторизації:', data);
       
       if (data.isAuthenticated) {
-        console.log('Користувач авторизований:', data.user);
         setCurrentUser(data.user);
         
         // Зберігаємо токен, якщо він є в відповіді
@@ -46,7 +43,6 @@ export const AuthProvider = ({ children }) => {
           setAuthToken(data.token);
         }
       } else {
-        console.log('Користувач не авторизований');
         setCurrentUser(null);
         setAuthToken(null);
       }
@@ -64,7 +60,6 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     
     try {
-      console.log('Реєстрація нового користувача:', formData.username);
       
       const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
@@ -82,7 +77,6 @@ export const AuthProvider = ({ children }) => {
       }
       
       const data = await response.json();
-      console.log('Реєстрація успішна:', data);
       
       setCurrentUser(data.user);
       
@@ -105,7 +99,6 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     
     try {
-      console.log('Спроба входу для користувача:', username);
       
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
@@ -123,7 +116,6 @@ export const AuthProvider = ({ children }) => {
       }
       
       const data = await response.json();
-      console.log('Авторизація успішна:', data);
       
       setCurrentUser(data.user);
       
@@ -146,7 +138,6 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     
     try {
-      console.log('Спроба виходу...');
       
       const response = await fetch(`${API_URL}/auth/logout`, {
         method: 'POST',
@@ -157,8 +148,6 @@ export const AuthProvider = ({ children }) => {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Помилка при виході');
       }
-      
-      console.log('Вихід успішний');
       
       setCurrentUser(null);
       setAuthToken(null);

@@ -38,11 +38,7 @@ app.use((req, res, next) => {
       // Встановлення об'єкта користувача в запит
       req.user = decoded;
       
-      console.log('Токен декодовано, користувач:', req.user.username);
-    } else {
-      console.log('Токен відсутній у запиті');
-    }
-  } catch (error) {
+    } } catch (error) {
     console.error('Помилка при декодуванні токена:', error);
   }
   
@@ -55,7 +51,6 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ecoaware'
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log('MongoDB connected successfully'))
 .catch(err => console.error('MongoDB connection error:', err));
 
 // Import routes

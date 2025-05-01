@@ -1,5 +1,4 @@
-// src/components/games/TrashSortingGame.js
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Container, Button, Modal, ProgressBar } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -46,7 +45,7 @@ const placeholderItems = TRASH_ITEMS.map(item => ({
 // Компонент гри
 const TrashSortingGame = () => {
   // Використання контексту авторизації
-  const { currentUser, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   
   // Стани гри
@@ -65,12 +64,12 @@ const TrashSortingGame = () => {
   const timerRef = useRef(null);
   const gameContainerRef = useRef(null);
 
-  // Рівні складності
-  const difficulties = {
+  // Рівні складності - обгорнуті у useMemo для запобігання зайвим ререндерам
+  const difficulties = useMemo(() => ({
     1: { itemCount: 3, timeLimit: 60, speedMultiplier: 1 },
     2: { itemCount: 4, timeLimit: 50, speedMultiplier: 1.2 },
     3: { itemCount: 5, timeLimit: 40, speedMultiplier: 1.5 }
-  };
+  }), []);
 
   // Генерувати випадкові предмети для поточного рівня
   const generateItems = () => {
@@ -93,8 +92,12 @@ const TrashSortingGame = () => {
     setCurrentItems(generateItems());
     setResults({ correct: 0, incorrect: 0, total: 0 });
     
+    // Зупиняємо попередній таймер, якщо він існує
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    
     // Запуск таймера
-    clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       setTimeLeft(prevTime => {
         if (prevTime <= 1) {
@@ -118,24 +121,13 @@ const TrashSortingGame = () => {
   };
 
   // Збереження результатів на сервері
-  // Збереження результатів на сервері
   const saveGameResults = async () => {
     try {
       // Якщо користувач не авторизований, показуємо модальне вікно з пропозицією авторизуватися
       if (!isAuthenticated) {
-        console.log('Користувач не авторизований. Показуємо модальне вікно з пропозицією авторизуватися.');
         setShowAuthModal(true);
         return;
-      }
-      
-      console.log('Відправляємо дані про результати гри:', {
-        level,
-        score,
-        correct: results.correct,
-        incorrect: results.incorrect,
-        total: results.total,
-        playTime: difficulties[level].timeLimit - timeLeft
-      });
+      };
       
       // Переконуємось, що всі дані передаються як числа
       const gameData = {
@@ -161,7 +153,6 @@ const TrashSortingGame = () => {
       try {
         // Спочатку отримуємо відповідь як текст
         const textResponse = await response.text();
-        console.log('Відповідь сервера (текст):', textResponse);
         
         // Спробуємо розпарсити відповідь як JSON
         try {
@@ -189,7 +180,6 @@ const TrashSortingGame = () => {
         throw new Error(`HTTP помилка ${response.status}: ${JSON.stringify(data)}`);
       }
       
-      console.log('Результат збереження гри:', data);
       return data;
     } catch (error) {
       console.error('Помилка при збереженні результатів:', error);
@@ -229,9 +219,13 @@ const TrashSortingGame = () => {
       newResults.total += 1;
       
       if (isCorrect) {
+        // Додаємо очки за правильну відповідь (10 * рівень складності)
         setScore(prevScore => prevScore + 10 * level);
         newResults.correct += 1;
       } else {
+        // Віднімаємо очки за неправильну відповідь (5 * рівень складності)
+        // але не дозволяємо рахунку стати менше 0
+        setScore(prevScore => Math.max(0, prevScore - 5 * level));
         newResults.incorrect += 1;
       }
       
@@ -305,6 +299,16 @@ const TrashSortingGame = () => {
       clearInterval(timerRef.current);
     };
   }, []);
+
+  // Оновлюємо час при зміні рівня складності
+  useEffect(() => {
+    if (gameStarted) {
+      setTimeLeft(difficulties[level].timeLimit);
+    } else {
+      // Якщо гра ще не почалася, ініціалізуємо timeLeft відповідно до вибраного рівня
+      setTimeLeft(difficulties[level].timeLimit);
+    }
+  }, [level, gameStarted, difficulties]);
 
   return (
     <Container className="trash-sorting-game">

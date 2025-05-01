@@ -13,16 +13,12 @@ const ViewedArticleTracker = ({ articleId, title, category }) => {
   
   useEffect(() => {
     const trackArticleView = async () => {
-      console.log('🔍 ViewedArticleTracker викликано для статті:', { articleId, title, category });
-      console.log('🔑 Статус авторизації:', { isAuthenticated, userId: currentUser?.id });
       
       if (!isAuthenticated || !articleId) {
-        console.log('❌ Пропускаємо відстеження: користувач не авторизований або відсутній ID статті');
         return;
       }
       
       try {
-        console.log('📤 Відправляємо запит на відстеження статті:', `${API_URL}/articles/track-view`);
         const response = await fetch(`${API_URL}/articles/track-view`, {
           method: 'POST',
           headers: {
@@ -41,8 +37,8 @@ const ViewedArticleTracker = ({ articleId, title, category }) => {
           throw new Error(errorData.message || 'Помилка відстеження');
         }
         
-        const data = await response.json();
-        console.log('✅ Перегляд статті успішно зареєстровано:', data);
+        // Отримуємо дані відповіді, але не використовуємо їх 
+        await response.json();
       } catch (error) {
         console.error('❌ Помилка при збереженні перегляду статті:', error);
       }

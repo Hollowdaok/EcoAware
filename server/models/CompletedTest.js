@@ -1,4 +1,3 @@
-// server/models/CompletedTest.js
 const mongoose = require('mongoose');
 
 const CompletedTestSchema = new mongoose.Schema({

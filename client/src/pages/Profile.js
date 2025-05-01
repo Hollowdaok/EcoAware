@@ -1,10 +1,9 @@
-// src/pages/Profile.js - Updated to use direct access routes
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Container, Row, Col, Card, Nav, Tab, Badge, Alert, Spinner, Button, Table } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-// API URL
+// API URL - constant defined outside component
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const Profile = () => {
@@ -12,14 +11,21 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Дані профілю користувача
+  // Use useRef to store mutable values that don't cause re-renders
+  const userStatsRef = useRef({
+    articles: [],
+    tests: [],
+    gameResults: []
+  });
+  
+  // State for user profile data
   const [userStats, setUserStats] = useState({
     articles: [],
     tests: [],
     gameResults: []
   });
   
-  // Завантаження даних користувача
+  // Loading user data
   useEffect(() => {
     const fetchUserData = async () => {
       if (!isAuthenticated) {
@@ -31,14 +37,12 @@ const Profile = () => {
       setError(null);
       
       try {
-        console.log('Fetching user profile data...');
         
-        // Масив для зберігання помилок для відображення користувачу
+        // Array to store error messages to display to the user
         const errorMessages = [];
         
-        // 1. Отримуємо переглянуті статті через прямий доступ
+        // 1. Get viewed articles via direct access
         try {
-          console.log('Fetching viewed articles via direct access...');
           const articlesViewedResponse = await fetch(`${API_URL}/articles/viewed`, {
             method: 'GET',
             credentials: 'include',
@@ -50,10 +54,9 @@ const Profile = () => {
           
           if (articlesViewedResponse.ok) {
             const articlesData = await articlesViewedResponse.json();
-            console.log('Articles data received:', articlesData);
             
             if (articlesData.success) {
-              userStats.articles = articlesData.articles || [];
+              userStatsRef.current.articles = articlesData.articles || [];
             } else {
               errorMessages.push(`Помилка отримання статей: ${articlesData.message || 'Невідома помилка'}`);
             }
@@ -62,8 +65,7 @@ const Profile = () => {
             console.error('Error fetching articles via direct access:', articlesViewedResponse.status, errorText);
             errorMessages.push(`Помилка отримання статей (${articlesViewedResponse.status})`);
             
-            // Якщо прямий доступ не працює, спробуємо звичайний маршрут
-            console.log('Trying regular article endpoint as fallback...');
+            // If direct access doesn't work, try the regular route
             const fallbackResponse = await fetch(`${API_URL}/articles/viewed`, {
               method: 'GET',
               credentials: 'include',
@@ -76,8 +78,7 @@ const Profile = () => {
             if (fallbackResponse.ok) {
               const fallbackData = await fallbackResponse.json();
               if (fallbackData.success) {
-                userStats.articles = fallbackData.articles || [];
-                console.log('Fallback successful, got articles:', userStats.articles.length);
+                userStatsRef.current.articles = fallbackData.articles || [];
               }
             }
           }
@@ -86,9 +87,8 @@ const Profile = () => {
           errorMessages.push(`Помилка отримання статей: ${articlesError.message}`);
         }
         
-        // 2. Отримуємо пройдені тести через прямий доступ
+        // 2. Get completed tests via direct access
         try {
-          console.log('Fetching completed tests via direct access...');
           const testsCompletedResponse = await fetch(`${API_URL}/tests/completed`, {
             method: 'GET',
             credentials: 'include',
@@ -100,10 +100,9 @@ const Profile = () => {
           
           if (testsCompletedResponse.ok) {
             const testsData = await testsCompletedResponse.json();
-            console.log('Tests data received:', testsData);
             
             if (testsData.success) {
-              userStats.tests = testsData.tests || [];
+              userStatsRef.current.tests = testsData.tests || [];
             } else {
               errorMessages.push(`Помилка отримання тестів: ${testsData.message || 'Невідома помилка'}`);
             }
@@ -112,8 +111,7 @@ const Profile = () => {
             console.error('Error fetching tests via direct access:', testsCompletedResponse.status, errorText);
             errorMessages.push(`Помилка отримання тестів (${testsCompletedResponse.status})`);
             
-            // Якщо прямий доступ не працює, спробуємо звичайний маршрут
-            console.log('Trying regular tests endpoint as fallback...');
+            // If direct access doesn't work, try the regular route
             const fallbackResponse = await fetch(`${API_URL}/tests/completed`, {
               method: 'GET',
               credentials: 'include',
@@ -126,8 +124,7 @@ const Profile = () => {
             if (fallbackResponse.ok) {
               const fallbackData = await fallbackResponse.json();
               if (fallbackData.success) {
-                userStats.tests = fallbackData.tests || [];
-                console.log('Fallback successful, got tests:', userStats.tests.length);
+                userStatsRef.current.tests = fallbackData.tests || [];
               }
             }
           }
@@ -136,32 +133,28 @@ const Profile = () => {
           errorMessages.push(`Помилка отримання тестів: ${testsError.message}`);
         }
         
-        // 3. Отримання результатів ігор
-        // Оновлений код запиту статистики ігор без проблемного заголовка
+        // 3. Get game results
         try {
-          console.log('Fetching game results...');
           
-          // Використовуємо стандартні заголовки без X-User-ID
+          // Using standard headers without X-User-ID
           const gameResultsResponse = await fetch(`${API_URL}/games/trash-sorting/stats`, {
             method: 'GET',
-            credentials: 'include', // Важливо для передачі cookie
+            credentials: 'include', // Important for cookie transmission
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json'
             }
           });
           
-          // Решта коду...
           if (gameResultsResponse.ok) {
             const gameResultsData = await gameResultsResponse.json();
-            console.log('Game results received:', gameResultsData);
             
             if (gameResultsData.success) {
-              userStats.gameResults = gameResultsData.stats || [];
+              userStatsRef.current.gameResults = gameResultsData.stats || [];
             } else {
               console.error('Error in game results data:', gameResultsData.message);
-              // Створюємо порожню статистику
-              userStats.gameResults = {
+              // Create empty stats
+              userStatsRef.current.gameResults = {
                 totalGames: 0,
                 totalScore: 0,
                 correctIncorrect: { correct: 0, incorrect: 0, total: 0, accuracy: 0 },
@@ -169,9 +162,8 @@ const Profile = () => {
               };
             }
           } else {
-            console.log('Game results not available:', gameResultsResponse.status);
-            // Створюємо порожню статистику
-            userStats.gameResults = {
+            // Create empty stats
+            userStatsRef.current.gameResults = {
               totalGames: 0,
               totalScore: 0,
               correctIncorrect: { correct: 0, incorrect: 0, total: 0, accuracy: 0 },
@@ -180,8 +172,8 @@ const Profile = () => {
           }
         } catch (gameError) {
           console.error('Exception fetching game results:', gameError);
-          // Створюємо порожню статистику
-          userStats.gameResults = {
+          // Create empty stats
+          userStatsRef.current.gameResults = {
             totalGames: 0,
             totalScore: 0,
             correctIncorrect: { correct: 0, incorrect: 0, total: 0, accuracy: 0 },
@@ -189,16 +181,14 @@ const Profile = () => {
           };
         }
         
-        console.log('Final user stats:', userStats);
-        
-        // Оновлюємо стан компонента з отриманими даними
+        // Update component state with received data
         setUserStats({
-          articles: userStats.articles,
-          tests: userStats.tests,
-          gameResults: userStats.gameResults
+          articles: userStatsRef.current.articles,
+          tests: userStatsRef.current.tests,
+          gameResults: userStatsRef.current.gameResults
         });
         
-        // Якщо є помилки, налаштовуємо їх для відображення
+        // If there are errors, set them for display
         if (errorMessages.length > 0) {
           setError(errorMessages.join('. '));
         }
@@ -211,9 +201,9 @@ const Profile = () => {
     };
     
     fetchUserData();
-  }, [isAuthenticated]);
+  }, [isAuthenticated]); // API_URL removed as it's a constant outside component
   
-  // Форматування дати
+  // Date formatting
   const formatDate = (dateString) => {
     if (!dateString) return 'Дата невідома';
     
@@ -227,7 +217,7 @@ const Profile = () => {
     });
   };
   
-  // Якщо користувач не авторизований
+  // If user is not authenticated
   if (!isAuthenticated) {
     return (
       <Container className="py-5">
@@ -251,7 +241,7 @@ const Profile = () => {
     <Container className="py-5">
       <h1 className="mb-4">Особистий кабінет</h1>
       
-      {/* Інформація про користувача */}
+      {/* User information */}
       <Card className="mb-4">
         <Card.Header as="h5" className="bg-success text-white">
           Профіль користувача
@@ -285,7 +275,7 @@ const Profile = () => {
         </Card.Body>
       </Card>
       
-      {/* Вкладки з даними користувача */}
+      {/* User data tabs */}
       {loading ? (
         <div className="text-center py-5">
           <Spinner animation="border" variant="success" />
@@ -331,7 +321,7 @@ const Profile = () => {
             </Col>
             <Col md={9}>
               <Tab.Content>
-                {/* Переглянуті статті */}
+                {/* Viewed articles */}
                 <Tab.Pane eventKey="articles">
                   <Card>
                     <Card.Header>
@@ -379,7 +369,7 @@ const Profile = () => {
                   </Card>
                 </Tab.Pane>
                 
-                {/* Пройдені тести */}
+                {/* Completed tests */}
                 <Tab.Pane eventKey="tests">
                   <Card>
                     <Card.Header>
@@ -438,7 +428,7 @@ const Profile = () => {
                   </Card>
                 </Tab.Pane>
                 
-                {/* Результати ігор */}
+                {/* Game results */}
                 <Tab.Pane eventKey="games">
                   <Card>
                     <Card.Header>

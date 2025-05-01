@@ -1,4 +1,3 @@
-// server/routes/games.js
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
@@ -10,13 +9,8 @@ router.post('/trash-sorting/results', async (req, res) => {
   try {
     const { level, score, correct, incorrect, total, playTime } = req.body;
     
-    // Детальне логування для діагностики
-    console.log('Отримано запит на збереження результатів гри:');
-    console.log('Тіло запиту:', req.body);
-    
     // Перевірка чи користувач авторизований
     if (!req.user) {
-      console.log('Неавторизований користувач намагається зберегти результати');
       return res.status(401).json({ 
         success: false, 
         message: 'Для збереження результатів необхідно авторизуватися'
@@ -25,13 +19,11 @@ router.post('/trash-sorting/results', async (req, res) => {
     
     // Отримання ID користувача з req.user (встановлюється middleware авторизації)
     const userId = req.user.id;
-    console.log('ID користувача:', userId);
     
     // Створення ObjectId для userId
     let userObjectId;
     try {
       userObjectId = new ObjectId(userId);
-      console.log('Створено ObjectId:', userObjectId);
     } catch (objIdError) {
       console.error('Помилка при створенні ObjectId:', objIdError);
       return res.status(400).json({
@@ -65,8 +57,6 @@ router.post('/trash-sorting/results', async (req, res) => {
     // Зберігаємо результат
     await gameResult.save();
     
-    console.log('Результат успішно збережено:', gameResult);
-    
     // Відправляємо відповідь
     return res.status(201).json({ 
       success: true, 
@@ -95,8 +85,6 @@ router.get('/trash-sorting/leaderboard', async (req, res) => {
       query.level = parseInt(level);
     }
     
-    console.log('Запит на рейтинг з фільтром:', query);
-    
     // Отримання кращих результатів
     const leaderboard = await GameResult.find(query)
       .sort({ score: -1 })  // Сортування за спаданням очок
@@ -104,8 +92,6 @@ router.get('/trash-sorting/leaderboard', async (req, res) => {
       .select('score correct incorrect total accuracy playTime level createdAt')
       .populate('userId', 'username')  // Заповнення поля користувача, якщо є зв'язок з колекцією користувачів
       .lean();  // Перетворення результатів на прості JS об'єкти
-    
-    console.log('Знайдено результатів:', leaderboard.length);
     
     return res.json({ 
       success: true, 
@@ -124,11 +110,6 @@ router.get('/trash-sorting/leaderboard', async (req, res) => {
 // Отримання статистики користувача
 router.get('/trash-sorting/stats', async (req, res) => {
   try {
-    // Логування для діагностики
-    console.log('Отримано запит статистики гри');
-    console.log('Заголовки запиту:', req.headers);
-    console.log('Cookies запиту:', req.cookies);
-    console.log('Користувач з запиту:', req.user);
     
     // Декодування токена вручну, якщо req.user відсутній але токен є
     if (!req.user && req.cookies.token) {
@@ -139,7 +120,6 @@ router.get('/trash-sorting/stats', async (req, res) => {
           process.env.JWT_SECRET || 'ecoaware_secure_jwt_token_2024'
         );
         req.user = decoded;
-        console.log('Токен декодовано в маршруті stats:', req.user);
       } catch (tokenError) {
         console.error('Помилка декодування токена в маршруті stats:', tokenError);
       }
@@ -147,7 +127,6 @@ router.get('/trash-sorting/stats', async (req, res) => {
     
     // Перевірка на наявність авторизації
     if (!req.user) {
-      console.log('Маршрут stats: користувач не авторизований');
       
       // Відповідаємо з порожньою статистикою замість помилки 401
       return res.json({
@@ -164,7 +143,6 @@ router.get('/trash-sorting/stats', async (req, res) => {
     
     // Отримання ID користувача з req.user
     const userId = req.user.id;
-    console.log('Запит статистики для користувача ID:', userId);
     
     // Переконаємося, що модель GameResult доступна
     if (!GameResult || typeof GameResult.find !== 'function') {
@@ -185,20 +163,16 @@ router.get('/trash-sorting/stats', async (req, res) => {
     let userObjectId;
     try {
       userObjectId = new ObjectId(userId);
-      console.log('ID користувача як ObjectId:', userObjectId);
     } catch (objIdError) {
       console.error('Помилка при створенні ObjectId:', objIdError);
       
       // Спробуємо використати рядкове представлення ID
       try {
-        console.log('Спроба прямого пошуку за userId:', userId);
         // Рахуємо ігри без перетворення на ObjectId
         const countWithoutObjectId = await GameResult.countDocuments({ 
           gameType: 'trash-sorting', 
           userId: userId 
         });
-        
-        console.log('Знайдено ігор без ObjectId:', countWithoutObjectId);
         
         if (countWithoutObjectId > 0) {
           // Якщо знайдено ігри, продовжуємо з рядковим ID
@@ -232,8 +206,6 @@ router.get('/trash-sorting/stats', async (req, res) => {
       gameType: 'trash-sorting', 
       userId: userObjectId 
     });
-    
-    console.log('Знайдено ігор:', totalGames);
     
     // Якщо користувач не грав жодної гри
     if (totalGames === 0) {
@@ -343,7 +315,6 @@ router.get('/trash-sorting/recommendations', async (req, res) => {
     
     // Отримання ID користувача з req.user
     const userId = req.user.id;
-    console.log('Запит рекомендацій для користувача ID:', userId);
     
     // Створення ObjectId для userId
     let userObjectId;

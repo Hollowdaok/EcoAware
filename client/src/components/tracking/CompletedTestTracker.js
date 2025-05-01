@@ -1,8 +1,6 @@
-// src/components/tracking/CompletedTestTracker.js
 import { useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 
-// API URL
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 /**
@@ -24,23 +22,16 @@ const CompletedTestTracker = ({
     const trackTestCompletion = async () => {
       // Перевіряємо, чи тест був вже відстежений для цієї сесії
       if (isTrackedRef.current) {
-        console.log('🔄 Пропускаємо повторне відстеження тесту:', testId);
         return;
       }
       
-      console.log('🔍 CompletedTestTracker викликано для тесту:', { testId, title, category, score });
-      console.log('🔑 Статус авторизації:', { isAuthenticated, userId: currentUser?.id });
-      
       if (!isAuthenticated || !testId) {
-        console.log('❌ Пропускаємо відстеження: користувач не авторизований або відсутній ID тесту');
         return;
       }
       
       try {
-        // Позначаємо, що тест уже відстежено, перед відправкою запиту
         isTrackedRef.current = true;
         
-        console.log('📤 Відправляємо запит на відстеження тесту:', `${API_URL}/tests/track-completion`);
         const response = await fetch(`${API_URL}/tests/track-completion`, {
           method: 'POST',
           headers: {
@@ -63,15 +54,24 @@ const CompletedTestTracker = ({
           throw new Error(errorData.message || 'Помилка відстеження');
         }
         
-        const data = await response.json();
-        console.log('✅ Результати тесту успішно зареєстровано:', data);
+        // Отримуємо дані відповіді, але не використовуємо їх
+        await response.json();
       } catch (error) {
         console.error('❌ Помилка при збереженні результатів тесту:', error);
       }
     };
     
     trackTestCompletion();
-  }, [testId, isAuthenticated, currentUser]); // Залежності мінімізовані
+  }, [
+    testId,
+    isAuthenticated, 
+    currentUser,
+    title,
+    category,
+    score,
+    correctAnswers,
+    totalQuestions
+  ]);
   
   return null;
 };

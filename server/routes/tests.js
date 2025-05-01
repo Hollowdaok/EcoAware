@@ -12,7 +12,6 @@ const requireAuth = authRouter.requireAuth;
 // IMPORTANT: Define the /completed endpoint BEFORE other routes to prevent conflicts
 router.get('/completed', requireAuth, async (req, res) => {
   try {
-    console.log('Completed tests route hit. User ID:', req.user.id);
     
     // Check if CompletedTest model is registered
     if (!mongoose.modelNames().includes('CompletedTest')) {
@@ -27,8 +26,6 @@ router.get('/completed', requireAuth, async (req, res) => {
     // Get completed tests for the user, sorted by completion date
     const completedTests = await CompletedTest.find({ userId: req.user.id })
       .sort({ completedAt: -1 });
-    
-    console.log('Found completed tests:', completedTests.length);
     
     res.status(200).json({ 
       success: true, 
@@ -51,8 +48,6 @@ router.post('/track-completion', requireAuth, async (req, res) => {
     const { testId, title, category, score, correctAnswers, totalQuestions, timestamp } = req.body;
     const userId = req.user.id;
     
-    console.log('Tracking test completion:', { userId, testId, title, score });
-    
     if (!testId || !title || score === undefined) {
       return res.status(400).json({ 
         success: false, 
@@ -72,7 +67,6 @@ router.post('/track-completion', requireAuth, async (req, res) => {
     });
     
     if (existingRecord) {
-      console.log('Duplicate test completion detected:', { testId, userId });
       return res.status(200).json({ 
         success: true, 
         message: 'Тест вже було зареєстровано',
