@@ -3,6 +3,7 @@ import { Container, Button, Modal, ProgressBar } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './TrashSortingGame.css';
+import paperImage from '../../assets/images/games/paper.jpg';
 
 // API URL
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -19,7 +20,7 @@ const TRASH_CATEGORIES = {
 
 // Предмети сміття
 const TRASH_ITEMS = [
-  { id: 1, name: 'Газета', category: TRASH_CATEGORIES.PAPER.id, image: '/items/newspaper.png' },
+  { id: 1, name: 'Газета', category: TRASH_CATEGORIES.PAPER.id, image: paperImage },
   { id: 2, name: 'Пластикова пляшка', category: TRASH_CATEGORIES.PLASTIC.id, image: '/items/plastic-bottle.png' },
   { id: 3, name: 'Скляна банка', category: TRASH_CATEGORIES.GLASS.id, image: '/items/glass-jar.png' },
   { id: 4, name: 'Консервна банка', category: TRASH_CATEGORIES.METAL.id, image: '/items/tin-can.png' },
@@ -36,11 +37,6 @@ const TRASH_ITEMS = [
   { id: 15, name: 'Яєчна шкаралупа', category: TRASH_CATEGORIES.ORGANIC.id, image: '/items/eggshell.png' }
 ];
 
-// Використовуємо плейсхолдери для зображень
-const placeholderItems = TRASH_ITEMS.map(item => ({
-  ...item,
-  image: `https://via.placeholder.com/150?text=${encodeURIComponent(item.name)}`
-}));
 
 // Компонент гри
 const TrashSortingGame = () => {
@@ -74,7 +70,7 @@ const TrashSortingGame = () => {
   // Генерувати випадкові предмети для поточного рівня
   const generateItems = () => {
     const itemCount = difficulties[level].itemCount;
-    const shuffledItems = [...placeholderItems].sort(() => 0.5 - Math.random());
+    const shuffledItems = [...TRASH_ITEMS].sort(() => 0.5 - Math.random());
     return shuffledItems.slice(0, itemCount);
   };
 
@@ -234,7 +230,7 @@ const TrashSortingGame = () => {
       // Видалення предмета з поточних і додавання нового
       setCurrentItems(prevItems => {
         const updatedItems = prevItems.filter(item => item.id !== draggedItem.id);
-        const newItem = placeholderItems.find(item => !prevItems.some(i => i.id === item.id));
+        const newItem = TRASH_ITEMS.find(item => !prevItems.some(i => i.id === item.id));
         
         if (newItem && updatedItems.length < difficulties[level].itemCount) {
           return [...updatedItems, newItem];
