@@ -3,7 +3,20 @@ import { Container, Button, Modal, ProgressBar } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './TrashSortingGame.css';
-import paperImage from '../../assets/images/games/paper.jpg';
+
+const importAllImages = (context) => {
+  let images = {};
+  context.keys().forEach((item) => {
+    const key = item.replace('./', '').replace(/\.\w+$/, '');
+    images[key] = context(item);
+  });
+  return images;
+};
+
+// Import all images from the trash-items directory
+export const trashItemImages = importAllImages(
+  require.context('../../assets/images/games', false, /\.(png|jpe?g|svg)$/)
+);
 
 // API URL
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -20,21 +33,21 @@ const TRASH_CATEGORIES = {
 
 // Предмети сміття
 const TRASH_ITEMS = [
-  { id: 1, name: 'Газета', category: TRASH_CATEGORIES.PAPER.id, image: paperImage },
-  { id: 2, name: 'Пластикова пляшка', category: TRASH_CATEGORIES.PLASTIC.id, image: '/items/plastic-bottle.png' },
-  { id: 3, name: 'Скляна банка', category: TRASH_CATEGORIES.GLASS.id, image: '/items/glass-jar.png' },
-  { id: 4, name: 'Консервна банка', category: TRASH_CATEGORIES.METAL.id, image: '/items/tin-can.png' },
-  { id: 5, name: 'Яблучний недоїдок', category: TRASH_CATEGORIES.ORGANIC.id, image: '/items/apple-core.png' },
-  { id: 6, name: 'Картонна коробка', category: TRASH_CATEGORIES.PAPER.id, image: '/items/cardboard-box.png' },
-  { id: 7, name: 'Пластикова упаковка', category: TRASH_CATEGORIES.PLASTIC.id, image: '/items/plastic-packaging.png' },
-  { id: 8, name: 'Паперовий пакет', category: TRASH_CATEGORIES.PAPER.id, image: '/items/paper-bag.png' },
-  { id: 9, name: 'Скляна пляшка', category: TRASH_CATEGORIES.GLASS.id, image: '/items/glass-bottle.png' },
-  { id: 10, name: 'Алюмінієва банка', category: TRASH_CATEGORIES.METAL.id, image: '/items/aluminum-can.png' },
-  { id: 11, name: 'Банановa шкірка', category: TRASH_CATEGORIES.ORGANIC.id, image: '/items/banana-peel.png' },
-  { id: 12, name: 'Використаний підгузок', category: TRASH_CATEGORIES.MIXED.id, image: '/items/diaper.png' },
-  { id: 13, name: 'Зламаний телефон', category: TRASH_CATEGORIES.MIXED.id, image: '/items/broken-phone.png' },
-  { id: 14, name: 'Пляшка від шампуню', category: TRASH_CATEGORIES.PLASTIC.id, image: '/items/shampoo-bottle.png' },
-  { id: 15, name: 'Яєчна шкаралупа', category: TRASH_CATEGORIES.ORGANIC.id, image: '/items/eggshell.png' }
+  { id: 1, name: 'Газета', category: TRASH_CATEGORIES.PAPER.id, image: trashItemImages['paper'] },
+  { id: 2, name: 'Пластикова пляшка', category: TRASH_CATEGORIES.PLASTIC.id, image: trashItemImages['plastic_bottle'] },
+  { id: 3, name: 'Скляна банка', category: TRASH_CATEGORIES.GLASS.id, image: trashItemImages['glass-jar'] },
+  { id: 4, name: 'Консервна банка', category: TRASH_CATEGORIES.METAL.id, image: trashItemImages['tin-can'] },
+  { id: 5, name: 'Яблучний недоїдок', category: TRASH_CATEGORIES.ORGANIC.id, image: trashItemImages['apple-core'] },
+  { id: 6, name: 'Картонна коробка', category: TRASH_CATEGORIES.PAPER.id, image: trashItemImages['cardboard-box'] },
+  { id: 7, name: 'Пластикова упаковка', category: TRASH_CATEGORIES.PLASTIC.id, image: trashItemImages['plastic-packaging'] },
+  { id: 8, name: 'Паперовий пакет', category: TRASH_CATEGORIES.PAPER.id, image: trashItemImages['paper-bag'] },
+  { id: 9, name: 'Скляна пляшка', category: TRASH_CATEGORIES.GLASS.id, image: trashItemImages['glass-bottle'] },
+  { id: 10, name: 'Алюмінієва банка', category: TRASH_CATEGORIES.METAL.id, image: trashItemImages['aluminum-can'] },
+  { id: 11, name: 'Банановa шкірка', category: TRASH_CATEGORIES.ORGANIC.id, image: trashItemImages['banana-peel'] },
+  { id: 12, name: 'Зламаний телефон', category: TRASH_CATEGORIES.MIXED.id, image: trashItemImages['broken-phone'] },
+  { id: 13, name: 'Пляшка від шампуню', category: TRASH_CATEGORIES.PLASTIC.id, image: trashItemImages['shampoo-bottle'] },
+  { id: 14, name: 'Яєчна шкаралупа', category: TRASH_CATEGORIES.ORGANIC.id, image: trashItemImages['eggshell'] }
+  
 ];
 
 
@@ -62,9 +75,9 @@ const TrashSortingGame = () => {
 
   // Рівні складності - обгорнуті у useMemo для запобігання зайвим ререндерам
   const difficulties = useMemo(() => ({
-    1: { itemCount: 3, timeLimit: 60, speedMultiplier: 1 },
+    1: { itemCount: 4, timeLimit: 60, speedMultiplier: 1 },
     2: { itemCount: 4, timeLimit: 50, speedMultiplier: 1.2 },
-    3: { itemCount: 5, timeLimit: 40, speedMultiplier: 1.5 }
+    3: { itemCount: 4, timeLimit: 40, speedMultiplier: 1.5 }
   }), []);
 
   // Генерувати випадкові предмети для поточного рівня
@@ -189,74 +202,185 @@ const TrashSortingGame = () => {
     }
   };
 
-  // Обробка перетягування предметів
-  const handleDragStart = (item, e) => {
-    setDraggedItem(item);
+const handleDrop = (category, e) => {
+  e.preventDefault();
+  
+  // Безпечно видаляємо клас, перевіривши, що e.currentTarget існує
+  if (e.currentTarget) {
+    e.currentTarget.classList.remove('drag-over');
+  }
+  
+  if (draggedItem) {
+    const isCorrect = draggedItem.category === category.id;
     
-    // Встановлюємо дані для перетягування
-    if (e.dataTransfer) {
-      e.dataTransfer.setData('text/plain', item.id);
-      // Залишаємо зображення при перетягуванні напівпрозорим
-      const img = new Image();
-      img.src = item.image;
-      e.dataTransfer.setDragImage(img, 75, 75);
+    // Знаходимо елемент, який перетягнули
+    const draggedElement = document.querySelector(`.trash-item[data-id="${draggedItem.id}"]`);
+    
+    if (draggedElement && e.currentTarget) {
+      // Отримуємо координати цілі (контейнера)
+      const targetRect = e.currentTarget.getBoundingClientRect();
+      const targetCenterX = targetRect.left + targetRect.width / 2;
+      const targetCenterY = targetRect.top + targetRect.height / 2;
+      
+      // Створюємо анімований елемент
+      const animatedItem = draggedElement.cloneNode(true);
+      animatedItem.style.position = 'fixed';
+      animatedItem.style.zIndex = '9999';
+      animatedItem.style.width = '100px';
+      animatedItem.style.height = '120px';
+      animatedItem.style.left = `${draggedElement.getBoundingClientRect().left}px`;
+      animatedItem.style.top = `${draggedElement.getBoundingClientRect().top}px`;
+      animatedItem.style.transition = 'all 0.3s ease-in-out';
+      animatedItem.style.pointerEvents = 'none';
+      
+      document.body.appendChild(animatedItem);
+      
+      // Спочатку ховаємо оригінальний елемент
+      draggedElement.style.opacity = '0';
+      
+      // Запускаємо анімацію переміщення до контейнера
+      setTimeout(() => {
+        animatedItem.style.left = `${targetCenterX - 50}px`;
+        animatedItem.style.top = `${targetCenterY - 60}px`;
+        animatedItem.style.opacity = '0.7';
+        animatedItem.style.transform = 'scale(0.7)';
+      }, 10);
+      
+      // Додаємо анімацію для контейнера
+      e.currentTarget.classList.add(isCorrect ? 'correct-sort' : 'incorrect-sort');
+      
+      // Видаляємо анімований елемент після завершення анімації
+      setTimeout(() => {
+        if (document.body.contains(animatedItem)) {
+          document.body.removeChild(animatedItem);
+        }
+        if (e.currentTarget) {
+          e.currentTarget.classList.remove('correct-sort', 'incorrect-sort');
+        }
+      }, 400);
     }
-  };
-
-  // Обробка скидання предмета в контейнер
-  const handleDrop = (category, e) => {
-    e.preventDefault();
     
-    if (draggedItem) {
-      const isCorrect = draggedItem.category === category.id;
+    // Оновлення результатів
+    const newResults = { ...results };
+    newResults.total += 1;
+    
+    if (isCorrect) {
+      // Додаємо очки за правильну відповідь (10 * рівень складності)
+      setScore(prevScore => prevScore + 10 * level);
+      newResults.correct += 1;
+    } else {
+      // Віднімаємо очки за неправильну відповідь (5 * рівень складності)
+      // але не дозволяємо рахунку стати менше 0
+      setScore(prevScore => Math.max(0, prevScore - 5 * level));
+      newResults.incorrect += 1;
+    }
+    
+    setResults(newResults);
+    
+    // Видалення предмета з поточних і додавання нового
+    setCurrentItems(prevItems => {
+      const updatedItems = prevItems.filter(item => item.id !== draggedItem.id);
+      const newItem = TRASH_ITEMS.find(item => !prevItems.some(i => i.id === item.id) && 
+                                       !updatedItems.some(i => i.id === item.id));
       
-      // Оновлення результатів
-      const newResults = { ...results };
-      newResults.total += 1;
-      
-      if (isCorrect) {
-        // Додаємо очки за правильну відповідь (10 * рівень складності)
-        setScore(prevScore => prevScore + 10 * level);
-        newResults.correct += 1;
-      } else {
-        // Віднімаємо очки за неправильну відповідь (5 * рівень складності)
-        // але не дозволяємо рахунку стати менше 0
-        setScore(prevScore => Math.max(0, prevScore - 5 * level));
-        newResults.incorrect += 1;
+      if (newItem && updatedItems.length < difficulties[level].itemCount) {
+        return [...updatedItems, newItem];
       }
       
-      setResults(newResults);
+      // Якщо не залишилось нових предметів, закінчуємо гру
+      if (updatedItems.length === 0) {
+        endGame();
+      }
       
-      // Видалення предмета з поточних і додавання нового
-      setCurrentItems(prevItems => {
-        const updatedItems = prevItems.filter(item => item.id !== draggedItem.id);
-        const newItem = TRASH_ITEMS.find(item => !prevItems.some(i => i.id === item.id));
-        
-        if (newItem && updatedItems.length < difficulties[level].itemCount) {
-          return [...updatedItems, newItem];
-        }
-        
-        // Якщо не залишилось нових предметів, закінчуємо гру
-        if (updatedItems.length === 0) {
-          endGame();
-        }
-        
-        return updatedItems;
-      });
-      
-      setDraggedItem(null);
-    }
-  };
-
-  // Допоміжні функції для обробки перетягування
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
-
-  const handleDragEnd = () => {
+      return updatedItems;
+    });
+    
     setDraggedItem(null);
-  };
+  }
+};
 
+// Безпечний обробник для handleDragOver
+const handleDragOver = (e) => {
+  e.preventDefault();
+  // Додаємо клас для підсвічування контейнера, над яким зараз перетягується предмет
+  if (e.currentTarget) {
+    e.currentTarget.classList.add('drag-over');
+  }
+};
+
+// Безпечний обробник для handleDragLeave
+const handleDragLeave = (e) => {
+  // Видаляємо клас підсвічування при виході з зони контейнера
+  if (e.currentTarget) {
+    e.currentTarget.classList.remove('drag-over');
+  }
+};
+
+// Безпечний обробник для handleDragEnd
+const handleDragEnd = () => {
+  // Скидаємо стан перетягування
+  setDraggedItem(null);
+  
+  // Видаляємо клас підсвічування з усіх контейнерів
+  const bins = document.querySelectorAll('.trash-bin');
+  if (bins) {
+    bins.forEach(bin => {
+      if (bin) {
+        bin.classList.remove('drag-over');
+      }
+    });
+  }
+};
+
+
+const handleDragStart = (item, e) => {
+  setDraggedItem(item);
+  
+  // Створюємо власне зображення для перетягування
+  if (e.dataTransfer) {
+    e.dataTransfer.setData('text/plain', item.id);
+    
+    try {
+      // Створюємо власний елемент для перетягування
+      const dragImage = document.createElement('div');
+      dragImage.className = 'custom-drag-image';
+      
+      const img = document.createElement('img');
+      img.src = item.image;
+      img.alt = item.name;
+      img.style.width = '75px';
+      img.style.height = '75px';
+      img.style.objectFit = 'contain';
+      
+      const name = document.createElement('div');
+      name.textContent = item.name;
+      name.style.fontSize = '12px';
+      name.style.textAlign = 'center';
+      name.style.backgroundColor = 'rgba(255, 255, 255, 0.8)';
+      name.style.padding = '2px';
+      name.style.borderRadius = '3px';
+      
+      dragImage.appendChild(img);
+      dragImage.appendChild(name);
+      
+      // Додаємо елемент в DOM (він буде тимчасовий)
+      document.body.appendChild(dragImage);
+      
+      // Встановлюємо елемент як зображення для перетягування
+      e.dataTransfer.setDragImage(dragImage, 40, 40);
+      
+      // Видаляємо тимчасовий елемент після короткої затримки
+      setTimeout(() => {
+        if (document.body.contains(dragImage)) {
+          document.body.removeChild(dragImage);
+        }
+      }, 0);
+    } catch (error) {
+      console.error('Помилка при створенні drag image:', error);
+      // Якщо виникла помилка, використовуємо стандартний спосіб (без кастомного зображення)
+    }
+  }
+};
   // Обробник переходу на наступний рівень
   const handleNextLevel = () => {
     if (level < 3) {
@@ -363,6 +487,7 @@ const TrashSortingGame = () => {
                     <div 
                       key={item.id}
                       className="trash-item"
+                      data-id={item.id}
                       draggable
                       onDragStart={(e) => handleDragStart(item, e)}
                       onDragEnd={handleDragEnd}
@@ -380,6 +505,7 @@ const TrashSortingGame = () => {
                       className="trash-bin"
                       style={{ backgroundColor: category.color }}
                       onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(category, e)}
                     >
                       <div className="bin-icon">{category.icon}</div>

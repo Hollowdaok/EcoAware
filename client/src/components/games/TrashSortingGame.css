@@ -280,26 +280,79 @@
     }
   }
   
-  /* Анімації для предметів та контейнерів */
-  @keyframes highlight {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
+ /* Стилі для кастомного зображення при перетягуванні */
+.custom-drag-image {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 5px;
+  border-radius: 8px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  z-index: 9999;
+  width: 80px;
+  height: 90px;
+}
+
+/* Покращені анімації для правильного/неправильного сортування */
+.correct-sort {
+  animation: highlight 0.5s ease;
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.8);
+  background-color: rgba(76, 175, 80, 0.2);
+}
+
+.incorrect-sort {
+  animation: shake 0.5s ease;
+  box-shadow: 0 0 15px rgba(244, 67, 54, 0.8);
+  background-color: rgba(244, 67, 54, 0.2);
+}
+
+/* Анімація для збільшення */
+@keyframes highlight {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Анімація для тряски */
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-5px); }
+  100% { transform: translateX(0); }
+}
+
+/* Стилі для анімації предметів (з'явлення/зникнення) */
+.trash-item {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  animation: pop-in 0.4s ease-out;
+}
+
+.trash-item.removing {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
   }
-  
-  .correct-sort {
-    animation: highlight 0.5s ease;
-    box-shadow: 0 0 15px #4caf50;
+  70% {
+    transform: scale(1.1);
   }
-  
-  .incorrect-sort {
-    animation: shake 0.5s ease;
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
-  
-  @keyframes shake {
-    0% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    50% { transform: translateX(5px); }
-    75% { transform: translateX(-5px); }
-    100% { transform: translateX(0); }
-  }
+}
+
+/* Покращений стиль для контейнерів сміття при перетягуванні над ними */
+.trash-bin.drag-over {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}

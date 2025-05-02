@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Container, Row, Col, Badge, Button, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Badge, Spinner } from 'react-bootstrap';
 import '../styles/ArticleDetail.css';
 // Імпортуємо трекер для відстеження перегляду статей
 import ViewedArticleTracker from '../components/tracking/ViewedArticleTracker';

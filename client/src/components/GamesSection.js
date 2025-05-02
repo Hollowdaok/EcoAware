@@ -1,5 +1,6 @@
 import React from 'react';
 import { Container, Row, Col, Card, Button } from 'react-bootstrap';
+import gameImage from '../assets/images/games/SortingTrashGame.jpg';
 
 const GamesSection = () => (
   <div className="bg-success bg-opacity-10 py-5">
@@ -16,11 +17,11 @@ const GamesSection = () => (
       <Row className="justify-content-center">
         <Col md={6} className="mb-4">
           <Card>
-            <div style={{ height: '200px', background: '#ccc' }} /> {/* Placeholder */}
+            <div style={{ height: '200px', backgroundImage: `url(${gameImage})`, backgroundSize: 'cover' }} /> {/* Placeholder */}
             <Card.Body>
               <Card.Title>Сортуй сміття</Card.Title>
               <Card.Text>Навчіться правильно сортувати відходи в інтерактивній грі!</Card.Text>
-              <Button variant="success">Грати</Button>
+              <Button variant="success" href="/games/trash-sorting">Грати</Button>
             </Card.Body>
           </Card>
         </Col>
