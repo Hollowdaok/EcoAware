@@ -206,7 +206,7 @@ router.post('/:id/check', async (req, res) => {
     });
     
     // Calculate score as percentage
-    results.score = (results.correctAnswers / results.totalQuestions) * 100;
+    results.score = ((results.correctAnswers / results.totalQuestions) * 100).toFixed(2);
     
     // Determine if test was passed based on passing score
     results.passed = results.score >= test.passingScore;
