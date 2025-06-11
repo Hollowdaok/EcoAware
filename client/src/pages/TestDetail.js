@@ -227,11 +227,11 @@ const TestDetail = () => {
   if (currentStep === 'intro') {
     return (
       <>
-        <div className="test-hero py-5">
+        <div className="test-hero py-5" style={{ minHeight: '75vh' }}>
           <Container>
             <Row className="justify-content-center">
               <Col md={10} lg={8} className="text-center">
-                <Link to="/tests" className="btn btn-sm btn-outline-light mb-4">
+                <Link to="/tests" className="btn btn-sm btn-outline-light" style={{ marginRight: '10px' }}>
                   <i className="bi bi-arrow-left"></i> Назад до списку
                 </Link>
                 <Badge bg="light" className="category-badge mb-3" style={{ color: '#2c7744' }}>
